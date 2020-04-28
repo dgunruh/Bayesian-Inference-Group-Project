@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 import numpy as np
 from matplotlib import pyplot as plt
@@ -12,19 +13,16 @@ def loading_data(dat_dir, show=False):
 
     Parameters:	
     -----------
-    dat_dir : string
+    dat_dir : string; 
     Point to the directory where the data files are stored
 
-    show : bool
+    show : bool; 
     Plot covariance matrix if needed
 
     Returns:	
     --------
-    stat_err : array_like
-    return the stat_err as a diagnal matrix
-
-    sys_err: array_like
-    return the systematic covariance matrix
+    data : dictionary; 
+    return a dictionary that contains stat_err, sys_err, z and m_B
     """
     Pantheon_data = ascii.read(dat_dir+'lcparam_DS17f.txt', names=['name', 'zcmb', 'zhel', 'dz', 
                                                           'mb', 'dmb', 'x1', 'dx1', 
@@ -36,6 +34,7 @@ def loading_data(dat_dir, show=False):
     z = Pantheon_data['zcmb']
     m_B = Pantheon_data['mb']
     stat_err = np.diag(Pantheon_data['dmb']) #convert the array to a dignal matrix
+    stat_err = np.matrix(stat_err)
 
     #read the systematic covariance matrix from sys_DS17f.txt
     error_file = ascii.read(dat_dir+'sys_DS17f.txt')
@@ -51,6 +50,7 @@ def loading_data(dat_dir, show=False):
             if len(line) > 0:
                 sys_err.append(line)
                 line = []
+    sys_err = np.matrix(sys_err)
 
     if show is True: #plot the covariance matrix if needed
         fig, ax1 = plt.subplots(nrows=1, ncols=1, figsize=(10,6.18))
@@ -61,31 +61,33 @@ def loading_data(dat_dir, show=False):
         ax1.set_ylabel('z')
         fig.colorbar(imgplot)
         plt.show()
-    return stat_err, sys_err, z, m_B
+    return {'stat_err':stat_err, 'sys_err':sys_err, 'z':z, 'm_B':m_B}
 
-def likelihood_cal(par=[], dat_dir=os.getcwd() + '/Binned_data/', ifsys=True):
+def likelihood_cal(data, par=[], ifsys=True):
     """ 
     Calculate likelihood for the parameters from sampler
 
     Parameters:	
     -----------
-    par : dictionary
+    data : dictionary; 
+    input the observation data, i.e., stat_err, sys_err, z, m_B
+
+    par : dictionary; 
     parameters from sampler
 
-    dat_dir : string
-    Point to the directory where the data files are stored
-    
-    ifsys: bool
+    ifsys: bool; 
     calculate likelihood with and without systematic error
 
     Returns:	
     --------
-    likelihood : float
+    likelihood : float; 
     return the log-likelihood to the sampler
     """
-    stat_err, sys_err, z, m_B = loading_data(dat_dir)
-    stat_err = np.matrix(stat_err)
-    sys_err = np.matrix(sys_err)
+    stat_err = data['stat_err']
+    sys_err = data['sys_err']
+    m_B = data['m_B']
+    z = data['z']
+
     if ifsys is True: #For the red contour
         tot_err = sys_err + stat_err
     else: # For the grey contour
@@ -101,6 +103,12 @@ def likelihood_cal(par=[], dat_dir=os.getcwd() + '/Binned_data/', ifsys=True):
     Chi2 = np.float(delta_mu * np.linalg.inv(tot_err) * np.transpose(delta_mu))
     
     #temporary output for test, will be deleted
-    return stat_err, sys_err, tot_err, z, m_B, Chi2
+    return Chi2
     #return log_likelihood
-    
+
+"""
+test
+"""
+data = loading_data(dat_dir=os.getcwd() + '/Binned_data/')
+Chi2 = likelihood_cal(data, par=[], ifsys=True)
+print (Chi2)
