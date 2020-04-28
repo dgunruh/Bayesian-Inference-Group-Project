@@ -60,7 +60,7 @@ def loading_data(dat_dir, show=False):
         ax1.set_ylabel('z')
         fig.colorbar(imgplot)
         plt.show()
-    return stat_err, sys_err
+    return stat_err, sys_err, z, m_B
 
 def likelihood_cal(par=[], dat_dir=os.getcwd() + '/Binned_data/', ifsys=True):
     """ 
@@ -80,14 +80,14 @@ def likelihood_cal(par=[], dat_dir=os.getcwd() + '/Binned_data/', ifsys=True):
     likelihood : float
     return the log-likelihood to the sampler
     """
-    stat_err, sys_err = loading_data(dat_dir)
+    stat_err, sys_err, z, m_B = loading_data(dat_dir)
     stat_err = np.matrix(stat_err)
     sys_err = np.matrix(sys_err)
     if ifsys is True: #For the red contour
         tot_err = sys_err + stat_err
     else: # For the grey contour
         tot_err = stat_err
-        
+
     """
     below is a test, we need to work on the code to calculate delta_mu from par
     """
@@ -98,6 +98,6 @@ def likelihood_cal(par=[], dat_dir=os.getcwd() + '/Binned_data/', ifsys=True):
     Chi2 = np.float(delta_mu * np.linalg.inv(tot_err) * np.transpose(delta_mu))
     
     #temporary output for test, will be deleted
-    return stat_err, sys_err, tot_err, Chi2
+    return stat_err, sys_err, tot_err, z, m_B, Chi2
     #return log_likelihood
     
