@@ -72,6 +72,8 @@ def likelihood_cal(par=[], dat_dir=os.getcwd() + '/Binned_data/', ifsys=True):
     parameters from sampler
     dat_dir : string
     Point to the directory where the data files are stored
+    ifsys: bool
+    calculate likelihood with and without systematic error
 
     Returns:	
     --------
@@ -85,15 +87,17 @@ def likelihood_cal(par=[], dat_dir=os.getcwd() + '/Binned_data/', ifsys=True):
         tot_err = sys_err + stat_err
     else: # For the grey contour
         tot_err = stat_err
+        
     """
     below is a test, we need to work on the code to calculate delta_mu from par
     """
     delta_mu = np.random.uniform(0, 1, 40)  #fake delta_mu values for test
     delta_mu = np.matrix(delta_mu)
+
     #Claculate Chi2 according to Equation 8
     Chi2 = np.float(delta_mu * np.linalg.inv(tot_err) * np.transpose(delta_mu))
     
-    #temporary output for test
+    #temporary output for test, will be deleted
     return stat_err, sys_err, tot_err, Chi2
     #return log_likelihood
     
