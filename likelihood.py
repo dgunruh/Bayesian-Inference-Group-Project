@@ -22,6 +22,7 @@ def loading_data(dat_dir, show=False):
     --------
     stat_err : array_like
     return the stat_err as a diagnal matrix
+
     sys_err: array_like
     return the systematic covariance matrix
     """
@@ -70,8 +71,10 @@ def likelihood_cal(par=[], dat_dir=os.getcwd() + '/Binned_data/', ifsys=True):
     -----------
     par : dictionary
     parameters from sampler
+
     dat_dir : string
     Point to the directory where the data files are stored
+    
     ifsys: bool
     calculate likelihood with and without systematic error
 
