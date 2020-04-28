@@ -19,7 +19,7 @@ Yize Dong, Davis Unruh, Patrick Wells, Tianqi Zhang
     - Write a routine that can move from one point in the 4-d Ωm/ Ωƛ/ H0/ M space to another -Davis/Tianqi
     - This routine will include a generating function that will propose new values of the parameters -Tianqi
     - This routine will also include a restriction of the possible parameter values, including an analytic elimination of the sampler reaching degenerate points -Davis
-    - The routine will also include a calculation of probability: how likely is it for the parameters to evolve to be equal to the new parameters. This will include an external call to the likelihood function, as well as the aforementioned generating function -Davis
+    - The routine will also include a calculation of probability: how likely is it for the parameters to evolve to be equal to the new parameters. This will include an external call to the likelihood function, as well as the a forementioned generating function -Davis
     - Finally, the routine will include a random number calculation to assess whether or not the step in parameter space is taken -Tianqi
     - All results will be stored in the external Markov-Chain data structure -Davis
 
@@ -31,7 +31,7 @@ Yize Dong, Davis Unruh, Patrick Wells, Tianqi Zhang
 3. Does not actually have to calculate the likelihood at every point, since it’s always the ratio of likelihoods that matters. If we save the chi-squared at every point, we can always use it to calculate the ratio of likelihoods and save some computation time.
 4. Should include tests that ensures that the result of a likelihood calculation makes sense (for example, that it’s not infinite)
 - Specific tasks that need to be completed for the likelihood:
-    - Move input routine from python notebook into likelihood.py - Yize
+    - Move input routine from python notebook into [likelihood.py](/likelihood.py) - Yize
     - Write routine that selects relevant data from input - Yize
     - Write routine that calculates the model based on current value of sampled parameters -  Patrick
     - Write a routine that returns the log-likelihood based on model - Patrick
