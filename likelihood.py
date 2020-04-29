@@ -63,52 +63,57 @@ def loading_data(dat_dir, show=False):
         plt.show()
     return {'stat_err':stat_err, 'sys_err':sys_err, 'z':z, 'm_B':m_B}
 
-def likelihood_cal(data, par=[], ifsys=True):
-    """ 
-    Calculate likelihood for the parameters from sampler
-
-    Parameters:	
+class LK:
+    """
+    likelihood calculation
     -----------
-    data : dictionary; 
-    input the observation data, i.e., stat_err, sys_err, z, m_B
-
-    par : dictionary; 
-    parameters from sampler
-
-    ifsys: bool; 
-    calculate likelihood with and without systematic error
-
-    Returns:	
-    --------
-    likelihood : float; 
-    return the log-likelihood to the sampler
+    usage example:
+    -----------
+    LK = likelihood.LK(ifsys=False)
+    log_likelihood = LK.likelihood_cal(par = [])
     """
-    stat_err = data['stat_err']
-    sys_err = data['sys_err']
-    m_B = data['m_B']
-    z = data['z']
-
-    if ifsys is True: #For the red contour
-        tot_err = sys_err + stat_err
-    else: # For the grey contour
-        tot_err = stat_err
-
-    """
-    below is a test, we need to work on the code to calculate delta_mu from par
-    """
-    delta_mu = np.random.uniform(0, 1, 40)  #fake delta_mu values for test
-    delta_mu = np.matrix(delta_mu)
-
-    #Claculate Chi2 according to Equation 8
-    Chi2 = np.float(delta_mu * np.linalg.inv(tot_err) * np.transpose(delta_mu))
     
-    #temporary output for test, will be deleted
-    return Chi2
-    #return log_likelihood
+    def __init__(self, dat_dir=os.getcwd() + '/Binned_data/', ifsys=True):
+        self.data = loading_data(dat_dir)
+        self.stat_err = self.data['stat_err']
+        self.sys_err = self.data['sys_err']
+        self.m_B = self.data['m_B']
+        self.z = self.data['z']
+        if ifsys is True: #For the red contour
+            self.tot_err = self.sys_err + self.stat_err
+        else: # For the grey contour
+            self.tot_err = self.stat_err
 
-"""
-test
-"""
-data = loading_data(dat_dir=os.getcwd() + '/Binned_data/')
-Chi2 = likelihood_cal(data, par=[], ifsys=True)
-print (Chi2)
+    def likelihood_cal(self, par=[]):
+        """ 
+        Calculate likelihood for the parameters from sampler
+
+        Parameters:	
+        -----------
+        data : dictionary; 
+        input the observation data, i.e., stat_err, sys_err, z, m_B
+
+        par : dictionary; 
+        parameters from sampler
+
+        ifsys: bool; 
+        calculate likelihood with and without systematic error
+
+        Returns:	
+        --------
+        likelihood : float; 
+        return the log-likelihood to the sampler
+        """
+
+        """
+        below is a test, we need to work on the code to calculate delta_mu from par
+        """
+        delta_mu = np.random.uniform(0, 1, 40)  #fake delta_mu values for test
+        delta_mu = np.matrix(delta_mu)
+
+        #Claculate Chi2 according to Equation 8
+        Chi2 = np.float(delta_mu * np.linalg.inv(self.tot_err) * np.transpose(delta_mu))
+    
+        #temporary output for test, will be deleted
+        return Chi2, par
+        #return log_likelihood
