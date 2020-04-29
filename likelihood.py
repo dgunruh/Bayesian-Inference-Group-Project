@@ -10,7 +10,8 @@ class LK:
     -----------
     usage example:
     -----------
-    LK = likelihood.LK(ifsys=False)
+    import likelihood
+    LK = likelihood.LK()
     log_likelihood = LK.likelihood_cal(par = [])
     """
     
