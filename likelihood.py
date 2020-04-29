@@ -4,65 +4,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 from astropy.io import ascii
 
-def loading_data(dat_dir, show=False):
-    """ 
-    read Pantheon data from Binned_data directory
-    -----------
-    usage example:
-    stat_err, sys_err = loading_data(dat_dir=os.getcwd() + '/Binned_data/')
-
-    Parameters:	
-    -----------
-    dat_dir : string; 
-    Point to the directory where the data files are stored
-
-    show : bool; 
-    Plot covariance matrix if needed
-
-    Returns:	
-    --------
-    data : dictionary; 
-    return a dictionary that contains stat_err, sys_err, z and m_B
-    """
-    Pantheon_data = ascii.read(dat_dir+'lcparam_DS17f.txt', names=['name', 'zcmb', 'zhel', 'dz', 
-                                                          'mb', 'dmb', 'x1', 'dx1', 
-                                                          'color', 'dcolor', '3rdvar', 'd3rdvar', 
-                                                          'cov_m_s', 'cov_m_c', 'cov_s_c', 'set', 
-                                                          'ra', 'dec'])
-
-    #read the redshift, apparent magnitude and statistic error
-    z = Pantheon_data['zcmb']
-    m_B = Pantheon_data['mb']
-    stat_err = np.diag(Pantheon_data['dmb']) #convert the array to a dignal matrix
-    stat_err = np.matrix(stat_err)
-
-    #read the systematic covariance matrix from sys_DS17f.txt
-    error_file = ascii.read(dat_dir+'sys_DS17f.txt')
-    error_file = error_file['40'] #where 40 is the first line of the file and indicates the size of the matrix
-    sys_err = []
-    cnt = 0 
-    line = []
-    for i in np.arange(np.size(error_file)):
-        cnt += 1
-        line.append(error_file[i])
-        if cnt % 40 == 0:
-            cnt = 0
-            if len(line) > 0:
-                sys_err.append(line)
-                line = []
-    sys_err = np.matrix(sys_err)
-
-    if show is True: #plot the covariance matrix if needed
-        fig, ax1 = plt.subplots(nrows=1, ncols=1, figsize=(10,6.18))
-        imgplot = plt.imshow(sys_err, cmap='bone', vmin=-0.001, vmax=0.001)   
-        ax1.set_xticklabels(['', 0.01,'',0.1,'',.50,'',1.0,'',2.0])
-        ax1.set_yticklabels(['', 0.01,'',0.1,'',.50,'',1.0,'',2.0])
-        ax1.set_xlabel('z')
-        ax1.set_ylabel('z')
-        fig.colorbar(imgplot)
-        plt.show()
-    return {'stat_err':stat_err, 'sys_err':sys_err, 'z':z, 'm_B':m_B}
-
 class LK:
     """
     likelihood calculation
@@ -73,18 +14,75 @@ class LK:
     log_likelihood = LK.likelihood_cal(par = [])
     """
     
-    def __init__(self, dat_dir=os.getcwd() + '/Binned_data/', ifsys=True):
-        self.data = loading_data(dat_dir)
+    def __init__(self, dat_dir=os.getcwd() + '/Binned_data/'):
+        self.data = self.loading_data(dat_dir)
         self.stat_err = self.data['stat_err']
         self.sys_err = self.data['sys_err']
         self.m_B = self.data['m_B']
         self.z = self.data['z']
-        if ifsys is True: #For the red contour
-            self.tot_err = self.sys_err + self.stat_err
-        else: # For the grey contour
-            self.tot_err = self.stat_err
+        self.tot_err = self.sys_err + self.stat_err #For the red contour
 
-    def likelihood_cal(self, par=[]):
+    def loading_data(self, dat_dir, show=False):
+        """ 
+        read Pantheon data from Binned_data directory
+        -----------
+        usage example:
+        stat_err, sys_err = loading_data(dat_dir=os.getcwd() + '/Binned_data/')
+
+        Parameters:	
+        -----------
+        dat_dir : string; 
+        Point to the directory where the data files are stored
+
+        show : bool; 
+        Plot covariance matrix if needed
+
+        Returns:	
+        --------
+        data : dictionary; 
+        return a dictionary that contains stat_err, sys_err, z and m_B
+        """
+
+        Pantheon_data = ascii.read(dat_dir+'lcparam_DS17f.txt', names=['name', 'zcmb', 'zhel', 'dz', 
+                                                            'mb', 'dmb', 'x1', 'dx1', 
+                                                            'color', 'dcolor', '3rdvar', 'd3rdvar', 
+                                                            'cov_m_s', 'cov_m_c', 'cov_s_c', 'set', 
+                                                            'ra', 'dec'])
+
+        #read the redshift, apparent magnitude and statistic error
+        z = Pantheon_data['zcmb']
+        m_B = Pantheon_data['mb']
+        stat_err = np.diag(Pantheon_data['dmb']) #convert the array to a dignal matrix
+        stat_err = np.matrix(stat_err)
+
+        #read the systematic covariance matrix from sys_DS17f.txt
+        error_file = ascii.read(dat_dir+'sys_DS17f.txt')
+        error_file = error_file['40'] #where 40 is the first line of the file and indicates the size of the matrix
+        sys_err = []
+        cnt = 0 
+        line = []
+        for i in np.arange(np.size(error_file)):
+            cnt += 1
+            line.append(error_file[i])
+            if cnt % 40 == 0:
+                cnt = 0
+                if len(line) > 0:
+                    sys_err.append(line)
+                    line = []
+        sys_err = np.matrix(sys_err)
+
+        if show is True: #plot the covariance matrix if needed
+            fig, ax1 = plt.subplots(nrows=1, ncols=1, figsize=(10,6.18))
+            imgplot = plt.imshow(sys_err, cmap='bone', vmin=-0.001, vmax=0.001)   
+            ax1.set_xticklabels(['', 0.01,'',0.1,'',.50,'',1.0,'',2.0])
+            ax1.set_yticklabels(['', 0.01,'',0.1,'',.50,'',1.0,'',2.0])
+            ax1.set_xlabel('z')
+            ax1.set_ylabel('z')
+            fig.colorbar(imgplot)
+            plt.show()
+        return {'stat_err':stat_err, 'sys_err':sys_err, 'z':z, 'm_B':m_B}
+
+    def likelihood_cal(self, par=[], ifsys=True):
         """ 
         Calculate likelihood for the parameters from sampler
 
@@ -117,3 +115,4 @@ class LK:
         #temporary output for test, will be deleted
         return Chi2, par
         #return log_likelihood
+
