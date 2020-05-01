@@ -21,7 +21,7 @@ class LK:
     LK = likelihood.LK()
     log_likelihood = LK.likelihood_cal(par = [])
     """
-    
+
     def __init__(self, dat_dir=os.getcwd() + '/Binned_data/'):
         self.data = self.loading_data(dat_dir)
         self.stat_err = self.data['stat_err']
@@ -31,43 +31,43 @@ class LK:
         self.tot_err = self.sys_err + self.stat_err #For the red contour
 
     def loading_data(self, dat_dir, show=False):
-        """ 
+        """
         read Pantheon data from Binned_data directory
         -----------
         usage example:
         stat_err, sys_err = loading_data(dat_dir=os.getcwd() + '/Binned_data/')
 
-        Parameters:	
+        Parameters:
         -----------
-        dat_dir : string; 
+        dat_dir : string;
         Point to the directory where the data files are stored
 
-        show : bool; 
+        show : bool;
         Plot covariance matrix if needed
 
-        Returns:	
+        Returns:
         --------
-        data : dictionary; 
+        data : dictionary;
         return a dictionary that contains stat_err, sys_err, z and m_B
         """
 
-        Pantheon_data = ascii.read(dat_dir+'lcparam_DS17f.txt', names=['name', 'zcmb', 'zhel', 'dz', 
-                                                            'mb', 'dmb', 'x1', 'dx1', 
-                                                            'color', 'dcolor', '3rdvar', 'd3rdvar', 
-                                                            'cov_m_s', 'cov_m_c', 'cov_s_c', 'set', 
+        Pantheon_data = ascii.read(dat_dir+'lcparam_DS17f.txt', names=['name', 'zcmb', 'zhel', 'dz',
+                                                            'mb', 'dmb', 'x1', 'dx1',
+                                                            'color', 'dcolor', '3rdvar', 'd3rdvar',
+                                                            'cov_m_s', 'cov_m_c', 'cov_s_c', 'set',
                                                             'ra', 'dec'])
 
         #read the redshift, apparent magnitude and statistic error
         z = Pantheon_data['zcmb']
         m_B = Pantheon_data['mb']
-        stat_err = np.diag(Pantheon_data['dmb']) #convert the array to a dignal matrix
+        stat_err = np.diag(Pantheon_data['dmb'])**2 #convert the array to a dignal matrix
         stat_err = np.matrix(stat_err)
 
         #read the systematic covariance matrix from sys_DS17f.txt
         error_file = ascii.read(dat_dir+'sys_DS17f.txt')
         error_file = error_file['40'] #where 40 is the first line of the file and indicates the size of the matrix
         sys_err = []
-        cnt = 0 
+        cnt = 0
         line = []
         for i in np.arange(np.size(error_file)):
             cnt += 1
@@ -81,7 +81,7 @@ class LK:
 
         if show is True: #plot the covariance matrix if needed
             fig, ax1 = plt.subplots(nrows=1, ncols=1, figsize=(10,6.18))
-            imgplot = plt.imshow(sys_err, cmap='bone', vmin=-0.001, vmax=0.001)   
+            imgplot = plt.imshow(sys_err, cmap='bone', vmin=-0.001, vmax=0.001)
             ax1.set_xticklabels(['', 0.01,'',0.1,'',.50,'',1.0,'',2.0])
             ax1.set_yticklabels(['', 0.01,'',0.1,'',.50,'',1.0,'',2.0])
             ax1.set_xlabel('z')
@@ -91,23 +91,23 @@ class LK:
         return {'stat_err':stat_err, 'sys_err':sys_err, 'z':z, 'm_B':m_B}
 
     def likelihood_cal(self, pars={}, ifsys=True):
-        """ 
+        """
         Calculate likelihood for the parameters from sampler
 
-        Parameters:	
+        Parameters:
         -----------
-        data : dictionary; 
+        data : dictionary;
         input the observation data, i.e., stat_err, sys_err, z, m_B
 
-        par : dictionary; 
+        par : dictionary;
         parameters from sampler
 
-        ifsys: bool; 
+        ifsys: bool;
         calculate likelihood with and without systematic error
 
-        Returns:	
+        Returns:
         --------
-        likelihood : float; 
+        likelihood : float;
         return the log-likelihood to the sampler
         """
 
@@ -119,20 +119,28 @@ class LK:
             assert param in pars.keys(), 'Error: likelihood calculation requires a value'\
                                          ' for  parameter {}'.format(param)
         
+        for param in NEED_NUISANCE:
+            assert param in pars.keys(), 'Error: Likelihood requires nuisance parameter {}'.format(param)
+
         for k,v in pars.items():
             assert isinstance(v, float), 'Error: value of paramater {} is not a float'.format(k)
-                                        
 
-        delta_mu = np.random.uniform(0, 1, 40)  #fake delta_mu values for test
+        model_mus = self.compute_model(pars) + pars.get('M_nuisance')
+        delta_mu = self.m_B - model_mus
         delta_mu = np.matrix(delta_mu)
+        
+        if(ifsys):
+            error = self.tot_err
+        else:
+            error = self.stat_err
 
         #Claculate Chi2 according to Equation 8
-        Chi2 = np.float(delta_mu * np.linalg.inv(self.tot_err) * np.transpose(delta_mu))
-    
+        Chi2 = np.float(delta_mu * np.linalg.inv(error) * np.transpose(delta_mu))
+
         #temporary output for test, will be deleted
-        return Chi2, pars
-        #return log_likelihood
-    
+        return -Chi2/2, pars #returns the log-likelihood
+        
+
     def compute_model(self, pars):
         '''
         Computes the model values  given a set of parameters. Note, the validity of the input parameters
@@ -140,16 +148,15 @@ class LK:
 
         '''
         if not 'Omega_k' in pars.keys():
-                
-            getcontext().prec = 3
             omega_k = 1 - pars.get('Omega_lambda') - pars.get('Omega_m')
-            if omega_k < 10**-7:
+            if np.abs(omega_k) < (10**-7):
                 omega_k = 0 # compensating for floating point arithmetic errors
             pars.update({'Omega_k': omega_k})
 
-        mus = [5*np.log10(self.luminosity_distance(redshift, pars)/(10)) for redshift in self.z]
+        lds = self.luminosity_distances(pars)
+        mus = np.log10(100000*lds) # luminosity distances are in units of megaparsecs
         return mus
-        
+
 
 
     def integrand(self, z, params):
@@ -157,17 +164,34 @@ class LK:
         sum = params['Omega_m']*((1+z)**3) + params['Omega_lambda'] + params['Omega_k']*((1+z)**2)
         return 1/np.sqrt(sum)
 
-    def luminosity_distance(self, z, pars):
-        d_hubble = self.hubble_distance(pars.get('H0'))
-        integral = quad(self.integrand, 0, z, args=(pars,))[0]
+    def luminosity_distances(self, pars):
+        '''
+        Calculates the luminosity distances for a given model, in units of mpc
+
+        '''
+        num_points = len(self.z)
+        lds = np.zeros(num_points)
+
         Omega_k = pars.get('Omega_k')
+        integral_val = quad(self.integrand, 0, self.z[0], args=(pars,))[0]
+        lds[0] = self.luminosity_delegate(self.z[0], Omega_k, integral_val)
+
+        for i in range(1, num_points):
+            integral_val += quad(self.integrand, self.z[i-1], self.z[i], args=(pars,))[0]
+            lds[i] = self.luminosity_delegate(self.z[i], Omega_k, integral_val)
+
+        return lds
+
+    def luminosity_delegate(self, z, Omega_k, integral_val):
+        d_hubble = self.hubble_distance(pars.get('H0'))
         if Omega_k > 0:
-            ld = (1+z)*d_hubble*np.sinh(np.sqrt(Omega_k)*integral)/np.sqrt(Omega_k)
+            return (1+z)*d_hubble*np.sinh(np.sqrt(Omega_k)*integral_val)/np.sqrt(Omega_k)
         elif Omega_k < 0:
-            ld = (1+z)*d_hubble*np.sin(np.sqrt(np.abs(Omega_k))*integral)/np.sqrt(np.abs(Omega_k))
+            return (1+z)*d_hubble*np.sin(np.sqrt(np.abs(Omega_k))*integral_val)/np.sqrt(np.abs(Omega_k))
         else:
-            ld = (1+z)*d_hubble*integral
-        return ld
+            return (1+z)*d_hubble*integral_val
+
+
 
     def hubble_distance(self, H0):
         c = 3*10**5
@@ -177,8 +201,9 @@ class LK:
 
 
 if __name__ == '__main__':
+    import matplotlib.pyplot as plt
     lk = LK()
-    pars = {'Omega_m': 0.3, 'Omega_lambda': 0.7, 'H0': 72, 'Omega_k': 0}
-    print (lk.luminosity_distance(0.014, pars))
-    mus = lk.compute_model(pars)
-    print(mus)
+    pars = {'Omega_m': 0.30, 'Omega_lambda': 0.7, 'H0': 72.0, 'M_nuisance': 19.0}
+    chi2, pars = lk.likelihood_cal(pars, False)
+    print(chi2)
+    print(pars)
