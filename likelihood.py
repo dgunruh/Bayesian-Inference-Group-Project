@@ -6,7 +6,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 from astropy.io import ascii
 from scipy.integrate import quad
-from sympy import limit
 
 NEED_PARAMS = ['Omega_m', 'Omega_lambda', 'H0']
 NEED_NUISANCE = ['M_nuisance']
@@ -238,18 +237,17 @@ class LK:
         num_points = len(self.z)
         lds = np.zeros(num_points)
 
-        Omega_k = pars.get('Omega_k')
         integral_val = quad(self.integrand, 0, self.z[0], args=(pars,))[0]
-        lds[0] = self.luminosity_delegate(self.z[0], Omega_k, integral_val)
+        lds[0] = self.luminosity_delegate(self.z[0], integral_val, pars)
 
         for i in range(1, num_points):
             integral_val += quad(self.integrand, self.z[i-1], self.z[i], args=(pars,))[0]
-            lds[i] = self.luminosity_delegate(self.z[i], Omega_k, integral_val)
+            lds[i] = self.luminosity_delegate(self.z[i], integral_val, pars)
             # Here we avoid excess calulation by integrating over redshift
             # ranges and summing
         return lds
 
-    def luminosity_delegate(self, z, Omega_k, integral_val):
+    def luminosity_delegate(self, z, integral_val, pars):
         '''
         Helper function for calculating the luminosity distnaces
 
@@ -258,19 +256,19 @@ class LK:
         z: float
         Redshift value
 
-        Omega_k: float
-        Curvature density
-
         integral_val: float
         value of the integral E(z) for the given redshift
 
+        pars: dict
+        dictionary of cosmological parameters and their values
+        
         Returns:
         --------
         luminosity distance: float
         Calculated luminosity distances in units of megaparsecs
         '''
-
         d_hubble = self.hubble_distance(pars.get('H0'))
+        Omega_k = pars.get('Omega_k')
         if Omega_k > 0:
             return (1+z)*d_hubble*np.sinh(np.sqrt(Omega_k)*integral_val)/np.sqrt(Omega_k)
         elif Omega_k < 0:
@@ -303,6 +301,6 @@ class LK:
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     lk = LK()
-    pars = {'Omega_m': 0.3001, 'Omega_lambda': 0.6999, 'H0': 72.0, 'M_nuisance': 19.0, 'Omega_k': 0.0}
+    pars = {'Omega_m': 0.3, 'Omega_lambda': 0.7, 'H0': 72.0, 'M_nuisance': 19.0, 'Omega_k': 0.0}
     chi2, pars = lk.likelihood_cal(pars)
     print(chi2)
