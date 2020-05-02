@@ -190,7 +190,7 @@ class LK:
             pars.update({'Omega_k': omega_k})
 
         lds = self.luminosity_distances(pars)
-        mus = 5 + np.log10(lds)
+        mus = 25 + 5*np.log10(lds)
         #luminosity distances are in units of megaparsecs
         return mus
 
@@ -261,7 +261,7 @@ class LK:
 
         pars: dict
         dictionary of cosmological parameters and their values
-        
+
         Returns:
         --------
         luminosity distance: float
@@ -301,6 +301,6 @@ class LK:
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     lk = LK()
-    pars = {'Omega_m': 0.3, 'Omega_lambda': 0.7, 'H0': 72.0, 'M_nuisance': 19.0, 'Omega_k': 0.0}
-    chi2, pars = lk.likelihood_cal(pars)
+    params = {'Omega_m': 0.3, 'Omega_lambda': 0.7, 'H0': 72.0, 'M_nuisance': -19.0, 'Omega_k': 0.0}
+    chi2, pars = lk.likelihood_cal(params)
     print(chi2)
