@@ -138,20 +138,20 @@ class LK:
         likelihood, pars : float, dict;
         return the log-likelihood to the sampler, as well as parameters
         """
-
-        print(pars.keys())
+        _pars = pars.copy()
+        #print(pars.keys())
         for param in NEED_PARAMS: #check for all neede params
-            assert param in pars.keys(), 'Error: likelihood calculation'\
+            assert param in _pars.keys(), 'Error: likelihood calculation'\
                                          ' requires a value for parameter {}'.format(param)
 
         for param in NEED_NUISANCE: #check for all needed nuisance parameters
-            assert param in pars.keys(), 'Error: Likelihood requires nuisance'\
+            assert param in _pars.keys(), 'Error: Likelihood requires nuisance'\
                                           ' parameter {}'.format(param)
 
-        for k,v in pars.items(): #check that value are valid
+        for k,v in _pars.items(): #check that value are valid
             assert isinstance(v, float), 'Error: value of paramater {} is not a float'.format(k)
 
-        model_mus = self.compute_model(pars) + pars.get('M_nuisance')
+        model_mus = self.compute_model(_pars) + pars.get('M_nuisance')
         delta_mu = self.m_B - model_mus
         delta_mu = np.matrix(delta_mu)
 
@@ -162,8 +162,10 @@ class LK:
 
         #Claculate Chi2 according to Equation 8
         Chi2 = np.float(delta_mu * np.linalg.inv(error) * np.transpose(delta_mu))
+        if np.isnan(Chi2):
+            Chi2 = 1e10 #give a very large value here
 
-        return -Chi2/2, pars #returns the log-likelihood
+        return -Chi2/2, _pars #returns the log-likelihood
 
 
     def compute_model(self, pars):
