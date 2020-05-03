@@ -1,43 +1,105 @@
 import math
 import numpy as np
+import scipy.stats as stat
+import likelihood
+import Chain
 
-import likelihood as lk
 
-class Sampler(object):
-
-    def __init__(self,init_condition=[0.3,0.7,72.0,-19.0,0.0]):
-        '''
+class MCMC(object):
+    def __init__(self, initial_condition, param_priors, systematic_error=True):
+        """
         sampler class
 
         Parameters:
         ----------
-        initial_condition: The sarting point of the sampler
-        In the order of Omega_m, Omega_Lambda, H0, M_nuisance, Omega_k
+        initial_condition: Dictionary{String: float}
+            A dictionary defining the starting parameter values of the sampler
+        
+        param_priors: Dictionary{String: String}
+            A dictionary defining the prior distributions of the input parameters
+
+        systematic_error: Boolean
+            Tells the sampler whether to calculate the likelihood 
+            with or without using the systematic error
 
         Attributes:
         ----------
-        current:[float]
-        The current sample value
+        chain: Chain
+            An instance of the Chain class which contains the
+            Markov Chain which the sampler is creating
+            
+        LK: likelihood
+            An instance of the likelihood class which will
+            return the log-likelihood of each set of parameter
+            values
+            
+        sys_error: boolean
+            The storage of the systematic_error input
 
-        candidate:[float]
-        The candidate value that could be a future current
+        initial_params: Dictionary{String: float}
+            The dictionary mapping the starting parameter values
+            to the parameters in question. Stored for the purpose
+            of calculating prior probability densities.
+        
+        current_params: Dictionary{String: float}
+            The dictionary mapping the current parameter
+            values to the parameters in question
 
-        usage exampe:
-        ----------
-        import sampler
-        initial_condition = [1,1,1,1,1]
+        current_prior_p: float
+            The combined prior probability of the current parameter values
+
+        candidate_params: Dictionary{string: float}
+            The dictionary mapping the candidate parameter
+            values to the parameters in question.
+
+        candidate_prior_p: float
+            The combined prior probability of the candidate parameter values
+                
+        param_priors: Dictionary{String: float}
+            The dictionary mapping each parameter to a 
+            prior distribution. The float is assumed to
+            be the std of a gaussian distribution. If the value
+            is zero, then it is instead a uniform distribution
+
+        cov: float
+            The input covariance for the generating function
+
+        Usage example:
+        ---------------
+        import MCsampler
         cov = np.identity()
-        sam = sampler.Sampler(initial_condition)
-        sample = sam.draw_sample(cov)
+        initial_params = {"Omega_m": 0.3,
+                          "Omega_lambda": 0.7,
+                          "H0": 74.0,
+                          "M_nuisance": -19.23,
+                          "Omega_k": 0.0,
+                         }
+        priors = {"Omega_m": 0.0,
+                  "Omega_lambda": 0.0,
+                  "H0": 0.0,
+                  "M_nuisance": 0.042,
+                  "Omega_k": 0.0
+        }
+        mcmc = MCsampler.MCMC(initial_params, priors)
+        mcmc.learncov(cov)
+        for _ in range(number_steps):
+            mcmc.add_to_chain()
+        chain = mcmc.return_chain()
+        """
 
-        '''
-        self.current = init_condition
-        self.candidate = []
+        self.chain = Chain.Chain()
+        self.LK = likelihood.LK()
+        self.sys_error = systematic_error
+        self.initial_params = initial_condition
+        self.current_params = initial_condition
+        self.current_prior_p = 1.0
+        self.candidate_params = {}
+        self.candidate_prior_p = 1.0
+        self.param_priors = param_priors
         self.cov = np.identity(4)
 
-
-    def gen_func(self,pars=[]):
-        '''
+    def gen_func(self, pars=[], current=[]):
+        """
         generating function
 
         Parameters:
@@ -45,58 +107,160 @@ class Sampler(object):
         pars:[float]
         A list of value in the order of Omega_m, Omega_Lambda, H0, M_nuisance, Omega_k
 
+        current:[float]
+            A list of values in the same order as the input parameter dictionary
+
         Returns:
         ----------
         nonnorm_pdf:float
         A non-normalized generating function
-        '''
+        """
         index = 0
         for i in range(4):
             for j in range(4):
-                index = index + (pars[i] - self.current[i])*self.cov[i][j]*(pars[j] - self.current[j])
-        
-        nonnorm_pdf = math.exp(-1*index)
+                index = index + (pars[i] - current[i]) * self.cov[i][j] * (
+                    pars[j] - current[j]
+                )
+
+        nonnorm_pdf = math.exp(-1 * index)
 
         return nonnorm_pdf
 
-    def draw_candidate(self):
-        '''
-        Sampling from the generating fucntion to genrare a candidate.
+    def draw_candidate(self, current):
+        """
+        Sampling from the generating fucntion to generate a candidate.
         A real customized 5d random sampling would be wild, this is just a work around that
         makes sense to me. PLEASE let me know any possible improvement.
 
-        '''
-     
+        """
+
         deny = True
         steps = 0
         while deny:
             steps = steps + 1
-            assert steps < 100, 'Error,value is too small to judge'
+            assert steps < 100, "Error,value is too small to judge"
             potential_candidate = []
             for i in range(5):
-                x = np.random.normal(loc=self.current[i])
+                x = np.random.normal(loc=current[i])
                 potential_candidate.append(x)
-            value = self.gen_func(potential_candidate)
+            value = self.gen_func(potential_candidate, current)
             judger = np.random.random_sample()
             if judger < value:
                 deny = False
-        self.candidate = potential_candidate
 
-    def learncov(self,cov):
+        # degeneracy: M + 5*np.log10(H0) can be considered one number.
+        # For the 1st chain: keep these degenerate. Future chains: prevent degeneracy
+        # x = self.current_params["M_nuisance"] + 5 * np.log10(self.current_params["H0"])
+        # new_M_nuisance = x - 5 * np.log10(new_H0)
+
+        return potential_candidate
+
+    def learncov(self, cov):
         self.cov = cov
 
-    def draw_sample(self):
-        #To be done by Davis
-        something = [1.0,1.0,1.0,1.0,1.0]
-        self.current = something
-        current_dict = {'Omega_m':1.0, 'Omega_Lambda':1.0,
-                        'H0':1.0, 'M_nuisance':1.0, 'Omega_k':1.0}
+    def calc_p(self):
+        """
+        Calculate the probability of moving to a new region
+        of parameter space. Note: we assume that the 
+        generating functions are symmetric, so the probability
+        of the generating function moving from the old parameters
+        to the new parameters is the same as vice-versa.
+            
+        Outputs:
+        -----------
+        weight: float
+            Float between 0 and 1, which is the probability of
+            moving to the proposed region of parameter space
+        """
 
-        return current_dict
+        log_likelihood_old, self.params = self.LK.likelihood_cal(
+            self.current_params, self.sys_error
+        )
+        log_likelihood_new, self.candidate_params = self.LK.likelihood_cal(
+            self.candidate_params, self.sys_error
+        )
+
+        # Calculate the weight only using the log-likelihood, due to large numbers
+        weight = min(1, log_likelihood_new / log_likelihood_old)
+
+        return weight
+
+    def calc_prior_p(self, params):
+        """
+        Determine the combined prior probability of all the parameters
+        It is assumed that if the value of the prior std is given as 0.0,
+        then the prior is a uniform prior and the probability of getting
+        that parameter value is 1.
+        Otherwise, it is assumed that the prior is a gaussian prior, centered
+        on the parameter value given in the intiial conditions, and the
+        probability of getting that parameter value is measured
+
+        Inputs:
+        ---------
+        params: Dictionary{String: float}
+            The dictionary mapping all the parameters to values
+        """
+
+        combined_prior_probability = 1.0
+        for key, value in self.param_priors:
+            if value == 0.0:
+                combined_prior_probability *= 1.0
+            else:
+                mean = self.initial_params[key]
+                test_value = params[key]
+                p = stat.norm(mean, value).pdf(test_value)
+                combined_prior_probability *= p
+
+        self.candidate_prior_p = combined_prior_probability
+
+    def take_step(self):
+        """
+        Determine potential step, and whether step is taken or not. If not,
+        keeps the parameters the same.
+
+        Outputs:
+        ---------
+        new_params: Dictionary{String: float}
+            The dictionary containing the mapping of parameter values to
+            parameter names of the new parameters.
+        """
+        candidate_param_values = self.draw_candidate(list(self.current_params.values()))
+        self.candidate_params = dict(
+            zip(list(self.current_params.keys()), candidate_param_values)
+        )
+        step_weight = self.calc_p()
+        r = np.random.uniform(0.0, 1.0)
+        if r <= step_weight:
+            new_params = self.candidate_params
+            self.current_prior_p = self.candidate_prior_p
+        else:
+            new_params = self.current_params
+
+        return new_params
+
+    def add_to_chain(self, cov):
+        """
+        Take a step, and add the new parameter values
+        to the Markov Chain
+
+        Inputs:
+        --------
+        cov: float
+            The covariance of the generating function
+        """
+        self.current_params = self.take_step()
+        self.chain.add_sample(self.current_params)
+
+    def return_chain(self):
+        """
+        Return the Markov Chain which the sampler has constructed
         
+        Outputs:
+        ---------
+        self.chain: Chain
+            The list of all visited parameter dictionaries, where
+            each dictionary is of the type {string: float}, and map
+            parameter values to the parameter names
+        """
 
-
-
-
-
-
+        return self.chain
