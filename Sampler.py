@@ -4,7 +4,7 @@ import Chain
 
 
 class MCMC:
-    def __init__(self, systematic_error):
+    def __init__(self, systematic_error=True):
         """
         Class which perform the MCMC tasks
         
