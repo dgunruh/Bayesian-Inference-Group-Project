@@ -180,8 +180,13 @@ class MCMC(object):
             self.candidate_params, self.sys_error
         )
 
-        # Calculate the weight only using the log-likelihood, due to large numbers
-        weight = min(1, log_likelihood_new / log_likelihood_old)
+        # Calculate the weight, incorporating the prior probabilities
+        weight = min(
+            1,
+            np.exp(log_likelihood_new)
+            * self.current_prior_p
+            / (np.exp(log_likelihood_old) * self.candidate_prior_p),
+        )
 
         return weight
 
