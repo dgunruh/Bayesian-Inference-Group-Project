@@ -97,7 +97,8 @@ class MCMC:
             new_params, self.sys_error
         )
 
-        weight = min(1, np.exp(log_likelihood_new) / np.exp(log_likelihood_old))
+        # Calculate the weight only using the log-likelihood, due to large numbers
+        weight = min(1, log_likelihood_new / log_likelihood_old)
 
         return weight
 
