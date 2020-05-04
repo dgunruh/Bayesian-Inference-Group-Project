@@ -96,9 +96,9 @@ class MCMC(object):
         self.candidate_params = {}
         self.candidate_prior_p = 1.0
         self.param_priors = param_priors
-        self.cov = np.identity(4)
+        self.cov = np.identity(5)
 
-    def gen_func(self, pars=[], current=[]):
+    def gen_func(self, pars=[]):
         """
         generating function
 
@@ -116,8 +116,9 @@ class MCMC(object):
         A non-normalized generating function
         """
         index = 0
-        for i in range(4):
-            for j in range(4):
+        current = list(self.current_params.values())
+        for i in range(5):
+            for j in range(5):
                 index = index + (pars[i] - current[i]) * self.cov[i][j] * (
                     pars[j] - current[j]
                 )
@@ -126,24 +127,24 @@ class MCMC(object):
 
         return nonnorm_pdf
 
-    def draw_candidate(self, current):
+    def draw_candidate(self):
         """
         Sampling from the generating fucntion to generate a candidate.
         A real customized 5d random sampling would be wild, this is just a work around that
         makes sense to me. PLEASE let me know any possible improvement.
 
         """
-
+        current = list(self.current_params.values())
         deny = True
         steps = 0
         while deny:
             steps = steps + 1
-            assert steps < 100, "Error,value is too small to judge"
+            assert steps < 1000, "Error,value is too small to judge"
             potential_candidate = []
             for i in range(5):
                 x = np.random.normal(loc=current[i])
                 potential_candidate.append(x)
-            value = self.gen_func(potential_candidate, current)
+            value = self.gen_func(potential_candidate)
             judger = np.random.random_sample()
             if judger < value:
                 deny = False
@@ -229,7 +230,7 @@ class MCMC(object):
             The dictionary containing the mapping of parameter values to
             parameter names of the new parameters.
         """
-        candidate_param_values = self.draw_candidate(list(self.current_params.values()))
+        candidate_param_values = self.draw_candidate()
         self.candidate_params = dict(
             zip(list(self.current_params.keys()), candidate_param_values)
         )

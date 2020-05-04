@@ -139,7 +139,7 @@ class LK:
         return the log-likelihood to the sampler, as well as parameters
         """
 
-        print(pars.keys())
+        #print(pars.keys())
         for param in NEED_PARAMS: #check for all neede params
             assert param in pars.keys(), 'Error: likelihood calculation'\
                                          ' requires a value for parameter {}'.format(param)
