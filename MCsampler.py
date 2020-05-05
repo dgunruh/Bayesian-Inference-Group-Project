@@ -87,7 +87,7 @@ class MCMC(object):
         chain = mcmc.return_chain()
         """
 
-        self.chain = Chain.Chain()
+        self.chain = Chain.Chain(initial_condition)
         self.LK = likelihood.LK()
         self.sys_error = systematic_error
         self.initial_params = initial_condition
@@ -154,7 +154,7 @@ class MCMC(object):
         # x = self.current_params["M_nuisance"] + 5 * np.log10(self.current_params["H0"])
         # new_M_nuisance = x - 5 * np.log10(new_H0)
 
-        #Adjusting Omega_k to fit the model
+        # Adjusting Omega_k to fit the model
         potential_candidate[4] = 1 - potential_candidate[0] - potential_candidate[1]
         return potential_candidate
 
@@ -246,16 +246,12 @@ class MCMC(object):
 
         return new_params
 
-    def add_to_chain(self, cov):
+    def add_to_chain(self):
         """
         Take a step, and add the new parameter values
         to the Markov Chain
-
-        Inputs:
-        --------
-        cov: float
-            The covariance of the generating function
         """
+
         self.current_params = self.take_step()
         self.chain.add_sample(self.current_params)
 
@@ -272,3 +268,10 @@ class MCMC(object):
         """
 
         return self.chain
+
+    def reset_chain(self):
+        """
+        Resets the Markov Chain which the sampler has constructed
+        """
+
+        self.chain = Chain.Chain(self.initial_params)
