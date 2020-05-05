@@ -154,6 +154,8 @@ class MCMC(object):
         # x = self.current_params["M_nuisance"] + 5 * np.log10(self.current_params["H0"])
         # new_M_nuisance = x - 5 * np.log10(new_H0)
 
+        #Adjusting Omega_k to fit the model
+        potential_candidate[4] = 1 - potential_candidate[0] - potential_candidate[1]
         return potential_candidate
 
     def learncov(self, cov):
