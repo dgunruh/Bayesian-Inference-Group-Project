@@ -38,7 +38,8 @@ if __name__ == '__main__':
         for _ in range(sample_num):
             sam.add_to_chain()
         cha = sam.return_chain()
-
     print(cha.samples)
+    acceptance_rate = (1.0*sam.accepted)/(1.0*sample_num)
+    print("acceptance rate = ",acceptance_rate)
     #plot the data stored in chain, to be finished
     #cha.plot()

@@ -63,6 +63,9 @@ class MCMC(object):
 
         cov: float
             The input covariance for the generating function
+        
+        accepted: int
+            Tells you how many sample is accepted
 
         Usage example:
         ---------------
@@ -97,6 +100,7 @@ class MCMC(object):
         self.candidate_prior_p = 1.0
         self.param_priors = param_priors
         self.cov = np.identity(5)
+        self.accepted = 0
 
     def gen_func(self, pars=[]):
         """
@@ -239,6 +243,7 @@ class MCMC(object):
         step_weight = self.calc_p()
         r = np.random.uniform(0.0, 1.0)
         if r <= step_weight:
+            self.accepted = self.accepted + 1
             new_params = self.candidate_params
             self.current_prior_p = self.candidate_prior_p
         else:
