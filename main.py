@@ -4,6 +4,7 @@ import numpy as np
 import likelihood as lk
 import Chain as c
 import MCsampler
+import plot_mc
 
 if __name__ == '__main__':
     runiterate = False
@@ -39,6 +40,20 @@ if __name__ == '__main__':
             sam.add_to_chain()
         cha = sam.return_chain()
     print(cha.samples)
+
+    #"""All the plots
+    
+    #samples = cha.samples #plot the MCMC data
+    samples = plot_mc.simulator(1000)  #plot data from simulator, just a test
+    
+    plot_mc.mcmc_result(samples) #check all the parameters
+    
+    plot_mc.trace_plot(samples) #trace plot as a sanity check
+    
+    omega_m, omega_lambda, prob = plot_mc.samples_process(samples=samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40) #fig 18
+    plot_mc.fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[]) #fig 18
+    #"""
+
     acceptance_rate = (1.0*sam.accepted)/(1.0*sample_num)
     print("acceptance rate = ",acceptance_rate)
     #plot the data stored in chain, to be finished
