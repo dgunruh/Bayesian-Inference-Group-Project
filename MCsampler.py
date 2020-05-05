@@ -180,7 +180,7 @@ class MCMC(object):
             moving to the proposed region of parameter space
         """
 
-        log_likelihood_old, self.params = self.LK.likelihood_cal(
+        log_likelihood_old, self.current_params = self.LK.likelihood_cal(
             self.current_params, self.sys_error
         )
         log_likelihood_new, self.candidate_params = self.LK.likelihood_cal(
@@ -191,9 +191,12 @@ class MCMC(object):
         weight = min(
             1,
             np.exp(log_likelihood_new)
-            * self.current_prior_p
-            / (np.exp(log_likelihood_old) * self.candidate_prior_p),
+            * self.candidate_prior_p
+            / (np.exp(log_likelihood_old) * self.current_prior_p),
         )
+        #print("New log likelihood is: ", log_likelihood_new)
+        #print("Old log likelihood is: ", log_likelihood_old)
+        #print("Weight is: ", weight)
 
         return weight
 
@@ -211,10 +214,15 @@ class MCMC(object):
         ---------
         params: Dictionary{String: float}
             The dictionary mapping all the parameters to values
+
+        Outputs:
+        ----------
+        combined_prior_probability: float
+            The combined probability of all the priors (e.g. P(A_1)*...*P(A_N))
         """
 
         combined_prior_probability = 1.0
-        for key, value in self.param_priors:
+        for key, value in self.param_priors.items():
             if value == 0.0:
                 combined_prior_probability *= 1.0
             else:
@@ -224,6 +232,7 @@ class MCMC(object):
                 combined_prior_probability *= p
 
         self.candidate_prior_p = combined_prior_probability
+        return combined_prior_probability
 
     def take_step(self):
         """
@@ -240,6 +249,7 @@ class MCMC(object):
         self.candidate_params = dict(
             zip(list(self.current_params.keys()), candidate_param_values)
         )
+        self.candidate_prior_p = self.calc_prior_p(self.candidate_params)
         step_weight = self.calc_p()
         r = np.random.uniform(0.0, 1.0)
         if r <= step_weight:
