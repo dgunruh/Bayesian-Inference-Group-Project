@@ -6,6 +6,7 @@ import Chain as c
 import MCsampler
 
 if __name__ == '__main__':
+    runiterate = False
     sample_num = 100    #total number of sample drawn
     cov_ite_num = 10     #total iterate number to get a proper covariant matrix
     parms = ['Omega_m','Omega_lambda','H0','M_nuisance','Omega_k']
@@ -15,22 +16,30 @@ if __name__ == '__main__':
               'Omega_lambda': 0.0,
               'H0': 0.0,
               'M_nuisance': 0.042,
-              'Omega_k': 0.0}             
-    cov = np.identity(5)   #The initial covariant matrix
+              'Omega_k': 0.0} 
+    cov = np.loadtxt("cov.txt")            
     sam = MCsampler.MCMC(initial_condition,priors)
     
     #iterate to have a convergent covariant matrix for the 4 parameters
-    for _ in range(cov_ite_num):
+    if runiterate == True:
+        for _ in range(cov_ite_num):
+            cha = c.Chain(parms)
+            for step in range(sample_num):
+                #draw sample using sampler, to be finished
+                sample = sam.take_step()
+                cha.add_sample(sample)
+            #calculate covariant matrxi from chain data, to be finished
+            cov = cha.cov_cal()
+            sam.learncov(cov)
+        np.savetxt("cov.txt",cov)
+
+    else:
         cha = c.Chain(parms)
         for step in range(sample_num):
             #draw sample using sampler, to be finished
             sample = sam.take_step()
             cha.add_sample(sample)
-        
-        #calculate covariant matrxi from chain data, to be finished
-        cov = cha.cov_cal()
-        sam.learncov(cov)
-    
+
     print(cha.samples)
     #plot the data stored in chain, to be finished
     #cha.plot()
