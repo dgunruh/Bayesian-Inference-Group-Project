@@ -162,7 +162,8 @@ class LK:
 
         #Claculate Chi2 according to Equation 8
         Chi2 = np.float(delta_mu * np.linalg.inv(error) * np.transpose(delta_mu))
-
+        if np.isnan(Chi2):
+             Chi2 = np.inf #give a very large value here
         return -Chi2/2, _pars #returns the log-likelihood
 
 
