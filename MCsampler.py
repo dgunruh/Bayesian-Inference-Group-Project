@@ -102,7 +102,7 @@ class MCMC(object):
         self.cov = np.identity(5)
         self.accepted = 0
 
-    def gen_func(self, pars=[]):
+    def gen_func(self, pars=[], current=[]):
         """
         generating function
 
@@ -120,7 +120,7 @@ class MCMC(object):
         A non-normalized generating function
         """
         index = 0
-        current = list(self.current_params.values())
+        #current = list(self.current_params.values())
         for i in range(5):
             for j in range(5):
                 index = index + (pars[i] - current[i]) * self.cov[i][j] * (
@@ -139,6 +139,7 @@ class MCMC(object):
 
         """
         current = list(self.current_params.values())
+        val = self.current_params["M_nuisance"] - 5 * np.log10(self.current_params["H0"])
         deny = True
         steps = 0
         while deny:
@@ -147,16 +148,24 @@ class MCMC(object):
             potential_candidate = []
             for i in range(5):
                 x = np.random.normal(loc=current[i])
+                if i == 0 or i == 1:
+                    while x < 0 or x > 2:
+                        x = np.random.normal(loc=current[i])
+                #if i == 3:
+                #    while np.isclose(x, val + 5 * np.log10(potential_candidate[2])):
+                #        x = np.random.normal(loc=current[i])
                 potential_candidate.append(x)
-            value = self.gen_func(potential_candidate)
+            potential_candidate[4] = 1 - potential_candidate[0] - potential_candidate[1]
+            potential_candidate[3] = val + 5 * np.log10(potential_candidate[2])
+            value = self.gen_func(potential_candidate, current)
             judger = np.random.random_sample()
             if judger < value:
                 deny = False
 
         # degeneracy: M + 5*np.log10(H0) can be considered one number.
         # For the 1st chain: keep these degenerate. Future chains: prevent degeneracy
-        # x = self.current_params["M_nuisance"] + 5 * np.log10(self.current_params["H0"])
-        # new_M_nuisance = x - 5 * np.log10(new_H0)
+        # x = self.current_params["M_nuisance"] - 5 * np.log10(self.current_params["H0"])
+        # new_M_nuisance = x + 5 * np.log10(new_H0)
 
         # Adjusting Omega_k to fit the model
         potential_candidate[4] = 1 - potential_candidate[0] - potential_candidate[1]
@@ -194,18 +203,24 @@ class MCMC(object):
         #    * self.candidate_prior_p
         #    / (np.exp(log_likelihood_old) * self.current_prior_p),
         # )
+        candidate_vals = list(self.candidate_params.values())
+        current_vals = list(self.current_params.values())
         weight = min(
             1,
-            (log_likelihood_old
-            + np.log(self.current_prior_p))
-            / (log_likelihood_new + np.log(self.candidate_prior_p)),
+            ((log_likelihood_old
+            + np.log(self.current_prior_p)) * self.gen_func(candidate_vals, current_vals))
+            / ((log_likelihood_new + np.log(self.candidate_prior_p)) * self.gen_func(current_vals, candidate_vals)),
         )
 
         #if np.isneginf(log_likelihood_new):
         #    weight = 0.0
-        # print("New log likelihood is: ", log_likelihood_new)
-        # print("Old log likelihood is: ", log_likelihood_old)
-        # print("Weight is: ", weight)
+        #print("New log likelihood is: ", log_likelihood_new)
+        #print("P new: ",np.exp(log_likelihood_new))
+        # print("new prior P: ", self.candidate_prior_p)
+        #print("Old log likelihood is: ", log_likelihood_old)
+        #print("P old: ",np.exp(log_likelihood_old))
+        # print("Old prior P: ", self.current_prior_p)
+        #print("Weight is: ", weight)
 
         return weight
 
@@ -260,12 +275,12 @@ class MCMC(object):
         )
         self.candidate_prior_p = self.calc_prior_p(self.candidate_params)
         step_weight = self.calc_p()
-        r = np.random.uniform(0.0, 1.0)
+        #r = np.random.uniform(0.0, 1.0)
+        r = np.random.random_sample()
         if r <= step_weight:
             self.accepted = self.accepted + 1
             new_params = self.candidate_params
             self.current_prior_p = self.candidate_prior_p
-            #print("Accepted step weight: ", step_weight)
         else:
             new_params = self.current_params
 
@@ -300,3 +315,4 @@ class MCMC(object):
         """
 
         self.chain = Chain.Chain(self.initial_params)
+        self.current_params = self.initial_params
