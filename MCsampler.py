@@ -188,15 +188,24 @@ class MCMC(object):
         )
 
         # Calculate the weight, incorporating the prior probabilities
+        # weight = min(
+        #    1,
+        #    np.exp(log_likelihood_new)
+        #    * self.candidate_prior_p
+        #    / (np.exp(log_likelihood_old) * self.current_prior_p),
+        # )
         weight = min(
             1,
-            np.exp(log_likelihood_new)
-            * self.candidate_prior_p
-            / (np.exp(log_likelihood_old) * self.current_prior_p),
+            (log_likelihood_old
+            + np.log(self.current_prior_p))
+            / (log_likelihood_new + np.log(self.candidate_prior_p)),
         )
-        #print("New log likelihood is: ", log_likelihood_new)
-        #print("Old log likelihood is: ", log_likelihood_old)
-        #print("Weight is: ", weight)
+
+        #if np.isneginf(log_likelihood_new):
+        #    weight = 0.0
+        # print("New log likelihood is: ", log_likelihood_new)
+        # print("Old log likelihood is: ", log_likelihood_old)
+        # print("Weight is: ", weight)
 
         return weight
 
@@ -256,6 +265,7 @@ class MCMC(object):
             self.accepted = self.accepted + 1
             new_params = self.candidate_params
             self.current_prior_p = self.candidate_prior_p
+            #print("Accepted step weight: ", step_weight)
         else:
             new_params = self.current_params
 
