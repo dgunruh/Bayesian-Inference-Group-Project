@@ -1,3 +1,5 @@
+import numpy as np
+
 class Chain:
 
     def __init__(self, params=[]):
@@ -16,8 +18,10 @@ class Chain:
         params: list of strings:
                 Parameters that will be included in the samples
         '''
-        self.params = params + ['loglkl']
+        #self.params = params + ['loglkl']
+        self.params = params
         self.samples = []
+        self.sample_values = []
 
     def add_sample(self, sample={}):
         '''
@@ -42,5 +46,36 @@ class Chain:
             except ValueError:
                 print("Error: value of paramater {} is not a number".format(param))
                 return
-
+        sample_value = list(sample.values())
         self.samples.append(sample)
+        self.sample_values.append(sample_value)
+
+
+    def cov_cal(self,scale=1):
+        samplelist = np.array(self.sample_values)
+        samplelist_t = samplelist.transpose()
+        sample_mean = []
+        delta_list = []
+        cov = []
+        for row in samplelist_t:
+            mean = sum(row)/len(row)
+            sample_mean.append(mean)
+            delta = row - mean
+            delta_list.append(delta)
+        
+        for i in range(5):
+            for j in range(5):
+                element = np.multiply(delta_list[i],delta_list[j])
+                cov_element = sum(element)/len(element)
+                cov.append(cov_element)
+        
+        cov_array = np.array(cov)
+        cov_matrix = cov_array.reshape(5,5)
+
+        return cov_matrix
+
+        
+
+
+
+

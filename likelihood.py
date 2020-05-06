@@ -151,7 +151,7 @@ class LK:
         for k,v in _pars.items(): #check that value are valid
             assert isinstance(v, float), 'Error: value of paramater {} is not a float'.format(k)
 
-        model_mus = self.compute_model(_pars) + pars.get('M_nuisance')
+        model_mus = self.compute_model(_pars) + _pars.get('M_nuisance')
         delta_mu = self.m_B - model_mus
         delta_mu = np.matrix(delta_mu)
 
@@ -163,8 +163,7 @@ class LK:
         #Claculate Chi2 according to Equation 8
         Chi2 = np.float(delta_mu * np.linalg.inv(error) * np.transpose(delta_mu))
         if np.isnan(Chi2):
-            Chi2 = 1e10 #give a very large value here
-
+             Chi2 = np.inf #give a very large value here
         return -Chi2/2, _pars #returns the log-likelihood
 
 
