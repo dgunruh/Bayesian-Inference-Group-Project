@@ -128,21 +128,42 @@ def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[]):
     plt.show()
 
 def mcmc_result(parameters):
+    keys = parameters[1].keys()
+    latex_dic = {'Omega_m': r"$\Omega_m$",
+                 'Omega_lambda': r"$\Omega_{\Lambda}$",
+                 'H0': r"$H_0$",
+                 'M_nuisance': r"$M$",
+                 'Omega_k': r"$\Omega_k$"}
+    _label = []
+    for i in keys:
+        _label.append(latex_dic[i])
     pars_array = []
     for _pars in parameters:
         pars_array.append(list(_pars.values()))
     pars_array = np.array(pars_array)
-    figure = corner.corner(pars_array, labels=[r"$\Omega_m$", r"$\Omega_{\Lambda}$", r"$H_0$", r"$M$", r"$\Omega_k$"],
+    figure = corner.corner(pars_array, labels=_label,
                            color='k', quantiles=[0.16, 0.5, 0.84],
                            show_titles=True, title_kwargs={"fontsize": 12})
-    corner_axes = np.array(figure.get_axes()).reshape(5, 5)
+    corner_axes = np.array(figure.get_axes()).reshape(len(keys), len(keys))
     for ax in np.diag(corner_axes):
         ax.spines['top'].set_visible(False)
         ax.spines['left'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('none')
+    plt.show()
+
 def trace_plot(parameters):
+    keys = parameters[1].keys()
+    latex_dic = {'Omega_m': r"$\Omega_m$",
+                 'Omega_lambda': r"$\Omega_{\Lambda}$",
+                 'H0': r"$H_0$",
+                 'M_nuisance': r"$M$",
+                 'Omega_k': r"$\Omega_k$"}
+    _label = []
+    for i in keys:
+        _label.append(latex_dic[i])
+
     params = {'legend.fontsize': 16,
           'figure.figsize': (15, 5),
          'axes.labelsize': 17,
@@ -153,13 +174,20 @@ def trace_plot(parameters):
          'axes.linewidth': 2}
     plt.rcParams.update(params)
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
-    fig, axs = plt.subplots(nrows=5, ncols=1, sharex=True, figsize=(15,10), gridspec_kw={'hspace': 0})
+    fig, axs = plt.subplots(nrows=len(keys), ncols=1, sharex=True, figsize=(15, 10), gridspec_kw={'hspace': 0})
     pars_array = []
     for _pars in parameters:
         pars_array.append(list(_pars.values()))
     pars_array = np.array(pars_array)
-    for i in np.arange(5):
-        axs[i].plot(np.arange(len(parameters))+1, pars_array[:,i])
+    for i in np.arange(len(keys)):
+        axs[i].plot(np.arange(len(parameters)) + 1, pars_array[:, i])
+        axs[i].set_ylabel(_label[i], size=15)
+
+    fig.add_subplot(111, frameon=False)
+    plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+    plt.xlabel('steps', size=20, labelpad=12)
+    plt.title('Trace Plot')
+    plt.show()
 
 def simulator(num=500):
     samples = []
@@ -167,9 +195,18 @@ def simulator(num=500):
         pars = {'Omega_m': abs(np.random.normal(0.3,0.05,1)[0]), 
                 'Omega_lambda': abs(np.random.normal(0.7,0.1,1)[0]), 
                 'H0': np.random.normal(70,5,1)[0], 
-                'M_nuisance': np.random.normal(-19, 1, 1)[0],
+                #'M_nuisance': np.random.normal(-19, 1, 1)[0],
                 'Omega_k': np.random.normal(0., 0.01, 1)[0]}
         #_loglk, pars = LK.likelihood_cal(pars, ifsys=False)
         samples.append(pars)
     return samples
 
+if __name__ == '__main__':
+    samples = simulator(1000)  #plot data from simulator, just a test
+    
+    mcmc_result(samples) #check all the parameters
+    
+    trace_plot(samples) #trace plot as a sanity check
+    
+    omega_m, omega_lambda, prob = samples_process(samples=samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40) #fig 18
+    fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[]) #fig 18
