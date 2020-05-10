@@ -6,7 +6,7 @@ import Chain
 
 
 class MCMC(object):
-    def __init__(self, initial_condition, param_priors, systematic_error=True):
+    def __init__(self, initial_condition, param_priors, systematic_error=False):
         """
         sampler class
 
@@ -99,7 +99,9 @@ class MCMC(object):
         self.candidate_params = {}
         self.candidate_prior_p = 1.0
         self.param_priors = param_priors
-        self.cov = np.identity(5)
+        self.cov_alpha = 0.1
+        self.cov = self.cov_alpha*np.identity(5)
+        self.cov_inverse = np.linalg.inv(self.cov)
         self.accepted = 0
 
     def gen_func(self, pars=[], current=[]):
@@ -123,10 +125,16 @@ class MCMC(object):
         #current = list(self.current_params.values())
         for i in range(5):
             for j in range(5):
-                index = index + (pars[i] - current[i]) * self.cov[i][j] * (
-                    pars[j] - current[j]
+                #index = index + (pars[i] - current[i]) * self.cov_inverse[i][j] * (
+                #    pars[j] - current[j]
+                #)
+                index = index + (current[i] - pars[i]) * self.cov_inverse[i][j] * (
+                    current[j] - pars[j]
                 )
 
+        #Alternate numpy version which gives same result
+        # delta = np.asarray(current) - np.asarray(pars)
+        # index = np.dot(np.dot(delta,self.cov_inverse),np.transpose(delta))
         nonnorm_pdf = math.exp(-1 * index)
 
         return nonnorm_pdf
@@ -139,7 +147,7 @@ class MCMC(object):
 
         """
         current = list(self.current_params.values())
-        val = self.current_params["M_nuisance"] - 5 * np.log10(self.current_params["H0"])
+        val = self.current_params["M_nuisance"] + 5 * np.log10(self.current_params["H0"])
         deny = True
         steps = 0
         while deny:
@@ -151,28 +159,23 @@ class MCMC(object):
                 if i == 0 or i == 1:
                     while x < 0 or x > 2:
                         x = np.random.normal(loc=current[i])
-                #if i == 3:
-                #    while np.isclose(x, val + 5 * np.log10(potential_candidate[2])):
-                #        x = np.random.normal(loc=current[i])
+
                 potential_candidate.append(x)
             potential_candidate[4] = 1 - potential_candidate[0] - potential_candidate[1]
-            potential_candidate[3] = val + 5 * np.log10(potential_candidate[2])
+            potential_candidate[3] = val - 5 * np.log10(potential_candidate[2])
+
             value = self.gen_func(potential_candidate, current)
             judger = np.random.random_sample()
             if judger < value:
                 deny = False
-
-        # degeneracy: M + 5*np.log10(H0) can be considered one number.
-        # For the 1st chain: keep these degenerate. Future chains: prevent degeneracy
-        # x = self.current_params["M_nuisance"] - 5 * np.log10(self.current_params["H0"])
-        # new_M_nuisance = x + 5 * np.log10(new_H0)
 
         # Adjusting Omega_k to fit the model
         potential_candidate[4] = 1 - potential_candidate[0] - potential_candidate[1]
         return potential_candidate
 
     def learncov(self, cov):
-        self.cov = cov
+        self.cov = self.cov_alpha * cov
+        self.cov_inverse = np.linalg.inv(self.cov)
 
     def calc_p(self):
         """
@@ -197,30 +200,22 @@ class MCMC(object):
         )
 
         # Calculate the weight, incorporating the prior probabilities
-        # weight = min(
-        #    1,
-        #    np.exp(log_likelihood_new)
-        #    * self.candidate_prior_p
-        #    / (np.exp(log_likelihood_old) * self.current_prior_p),
-        # )
-        candidate_vals = list(self.candidate_params.values())
-        current_vals = list(self.current_params.values())
         weight = min(
-            1,
-            ((log_likelihood_old
-            + np.log(self.current_prior_p)) * self.gen_func(candidate_vals, current_vals))
-            / ((log_likelihood_new + np.log(self.candidate_prior_p)) * self.gen_func(current_vals, candidate_vals)),
+           1,
+           np.exp(log_likelihood_new)
+           * self.candidate_prior_p
+           / (np.exp(log_likelihood_old) * self.current_prior_p),
         )
 
-        #if np.isneginf(log_likelihood_new):
-        #    weight = 0.0
-        #print("New log likelihood is: ", log_likelihood_new)
-        #print("P new: ",np.exp(log_likelihood_new))
-        # print("new prior P: ", self.candidate_prior_p)
-        #print("Old log likelihood is: ", log_likelihood_old)
-        #print("P old: ",np.exp(log_likelihood_old))
-        # print("Old prior P: ", self.current_prior_p)
-        #print("Weight is: ", weight)
+        # weight = min(
+        #     1,
+        #     ((log_likelihood_old
+        #     + np.log(self.current_prior_p))
+        #     / (log_likelihood_new + np.log(self.candidate_prior_p))),
+        # )
+
+        if np.isneginf(log_likelihood_new):
+           weight = 0.0
 
         return weight
 

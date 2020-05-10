@@ -8,8 +8,8 @@ import plot_mc
 
 if __name__ == '__main__':
     runiterate = True
-    sample_num = 1000    #total number of sample drawn
-    cov_ite_num = 10    #total iterate number to get a proper covariant matrix
+    sample_num = 50000    #total number of sample drawn
+    cov_ite_num = 2    #total iterate number to get a proper covariant matrix
     parms = ['Omega_m','Omega_lambda','H0','M_nuisance','Omega_k']
     initial_condition = {'Omega_m': 0.3, 'Omega_lambda': 0.7, 'H0': 74.0,
                           'M_nuisance': -19.23, 'Omega_k': 0.0}
@@ -28,8 +28,12 @@ if __name__ == '__main__':
             for _ in range(sample_num):
                 sam.add_to_chain()
             cha = sam.return_chain()
-            #calculate covariant matrxi from chain data, to be finished
+
+            #calculate covariant matrix from chain data
             cov = cha.cov_cal()
+
+            #reset alpha to be a new value. Starting value is 0.1
+            sam.cov_alpha = 100.0
             sam.learncov(cov)
             sam.reset_chain()
 

@@ -62,12 +62,16 @@ class Chain:
             sample_mean.append(mean)
             delta = row - mean
             delta_list.append(delta)
-        
+
         for i in range(5):
             for j in range(5):
                 element = np.multiply(delta_list[i],delta_list[j])
                 cov_element = sum(element)/len(element)
                 cov.append(cov_element)
+
+        #Alternate numpy version which gives same result
+        # new_delta = samplelist_t - samplelist_t.mean(axis = 1, keepdims = True)
+        # new_cov_array = np.dot(new_delta, new_delta.transpose())/len(samplelist)
         
         cov_array = np.array(cov)
         cov_matrix = cov_array.reshape(5,5)
