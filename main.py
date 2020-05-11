@@ -49,7 +49,7 @@ if __name__ == '__main__':
     #"""All the plots
     
     #samples = cha.samples #plot the MCMC data
-    samples = plot_mc.simulator(1000)  #plot data from simulator, just a test
+    samples = c.simulator(1000)  #plot data from simulator, just a test
     
     plot_mc.mcmc_result(cha.samples) #check all the parameters
     

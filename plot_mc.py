@@ -24,9 +24,10 @@ def samples_process(samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin
     omega_m = omega_m[:-1]
     omega_lambda = omega_lambda[:-1]
     prob = prob/np.sum(prob)
-    return omega_m, omega_lambda, prob
+    quantile = [np.quantile(_omega_m, [0.16, 0.5, 0.84]), np.quantile(_omega_L, [0.16, 0.5, 0.84])]
+    return omega_m, omega_lambda, prob, quantile
 
-def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[]):
+def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[], quantile_sys=[[],[]], quantile_nosys=[[],[]]):
     params = {'legend.fontsize': 16,
               'figure.figsize': (15, 5),
              'axes.labelsize': 17,
@@ -49,9 +50,29 @@ def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[]):
                     origin='lower', 
                     colors=[(0.80078125, 0.328125 , 0.34765625), (0.76171875, 0.1640625 , 0.18359375)], 
                     alpha=0.9, linewidths=2)
+        x1, x0, x2 = np.round(quantile_sys[0], 3)
+        up = np.round(x2 - x0, 3)
+        down = np.round(x0 - x1, 3)
+        ax.text(0.1, 0.9, r"$\Omega_m$ = "+str(x0)+r"$^{"+str(up)+"}_{"+str(down)+"}$", 
+                transform=ax.transAxes, color='red', size=15, alpha=0.7)
+        x1, x0, x2 = np.round(quantile_sys[1], 3)
+        up = np.round(x2 - x0, 3)
+        down = np.round(x0 - x1, 3)
+        ax.text(0.1, 0.85, r"$\Omega_{\Lambda}$ = "+str(x0)+r"$^{"+str(up)+"}_{"+str(down)+"}$", 
+                transform=ax.transAxes, color='red', size=15, alpha=0.7)
         ax.text(0.5,1.1,"Pantheon", color='red',rotation=40,alpha=0.7, size=15)
     if len(prob_nosys) != 0:
         _chi2_nosys = -2*np.log(prob_nosys)
+        x1, x0, x2 = np.round(quantile_nosys[0], 3)
+        up = np.round(x2 - x0, 3)
+        down = np.round(x0 - x1, 3)
+        ax.text(0.1, 0.8, r"$\Omega_m$ = "+str(x0)+r"$^{"+str(up)+"}_{"+str(down)+"}$", 
+                transform=ax.transAxes, color=(0.5,0.5,0.5), size=15, alpha=0.7)
+        x1, x0, x2 = np.round(quantile_nosys[1], 3)
+        up = np.round(x2 - x0, 3)
+        down = np.round(x0 - x1, 3)
+        ax.text(0.1, 0.75, r"$\Omega_{\Lambda}$ = "+str(x0)+r"$^{"+str(up)+"}_{"+str(down)+"}$", 
+                transform=ax.transAxes, color=(0.5,0.5,0.5), size=15, alpha=0.7)
         ax.contourf(omega_m, omega_lambda, np.transpose(prob_nosys), 
                     levels=[np.exp((6.17+_chi2_nosys.min())/(-2)),np.exp((2.3+_chi2_nosys.min())/(-2)),1],
                     origin='lower', 
@@ -200,7 +221,7 @@ if __name__ == '__main__':
     
     trace_plot(samples) #trace plot as a sanity check
     
-    omega_m, omega_lambda, prob = samples_process(samples=samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40) #fig 18
-    fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[])  #fig 18
+    omega_m, omega_lambda, prob, quantile_nosys = samples_process(samples=samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40) #fig 18
+    fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[], quantile_nosys=quantile_nosys)  #fig 18
     
     print ("plot_mc.py is tested!")
