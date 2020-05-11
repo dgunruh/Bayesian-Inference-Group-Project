@@ -6,6 +6,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from astropy.io import ascii
 from scipy.integrate import quad
+import plot_mc
 
 NEED_PARAMS = ['Omega_m', 'Omega_lambda', 'H0']
 NEED_NUISANCE = ['M_nuisance']
@@ -342,10 +343,55 @@ def test_luminosity_distances():
     assert low_passed and high_passed, 'Error: luminosity distance calculation' \
                                        ' failed for positive Omega_k model'
     print("Luminosity distance test passed for positive omegaK cosmological model")
+def test_loading_data():
+    lk = LK()
+    #test data loading part
+    data_loading_test = lk.loading_data(dat_dir=os.getcwd() + '/Binned_data/', show=True)
+    print('data is properly loaded!')
+
+def test_likelihood():
+    #test the likelihood calculation by make a 2D grid plot
+    pars = {'Omega_m': 0.30, 'Omega_lambda': 0.7, 'H0': 74., 'M_nuisance': -19.23}#, 'Omega_k': 0.03
+    i=0
+    nx=50
+    ny=50
+    loglk_sys=np.zeros((nx,ny))
+    loglk_nosys=np.zeros((nx,ny))
+    omega_m = np.linspace(0,1.6,nx)
+    omega_lambda = np.linspace(0,2.5,ny)
+    par_record = []
+    for _omega_m in omega_m:
+        j=0
+        pars.update({'Omega_m': _omega_m})
+        for _omega_lambda in omega_lambda:
+            pars.update({'Omega_lambda': _omega_lambda})
+            _loglk_sys, _pars = lk.likelihood_cal(pars=pars, ifsys=True)
+            _loglk_nosys, _pars = lk.likelihood_cal(pars=pars, ifsys=False)
+            #pars = {'Omega_m': 0.30, 'Omega_lambda': 0.7, 'H0': 74.0, 'M_nuisance': -19.23}
+            #par_record.append(_pars)
+            try:
+                loglk_sys[i, j] = _loglk_sys
+                loglk_nosys[i, j] = _loglk_nosys
+            except IndexError:
+                print (i, j)
+            j+=1
+        i += 1
+    prob_sys = np.exp(loglk_sys)
+    prob_sys = prob_sys / np.sum(prob_sys)
+    prob_nosys = np.exp(loglk_nosys)
+    prob_nosys = prob_nosys / np.sum(prob_nosys)
+    plot_mc.fig18(omega_m, omega_lambda,
+                  prob_sys=prob_sys, prob_nosys=prob_nosys,
+                  quantile_sys=[[0.319, 0.249,0.389],[0.733,0.733-0.113,0.733+0.113]], quantile_nosys=[[0.348, 0.348-0.04,0.348+0.04],[0.827,0.827-0.068,0.827+0.068]])
+
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     lk = LK()
     params = {'Omega_m': 0.29, 'Omega_lambda': 0.71, 'H0': 72.0, 'M_nuisance': -19.0, 'Omega_k': 0.0}
     chi2, pars = lk.likelihood_cal(params)
-    print(chi2)
+    test_loading_data()
+    test_hubble_distance()
+    test_integrand()
+    test_luminosity_distances()
+    test_likelihood() #This may take one minute to run
