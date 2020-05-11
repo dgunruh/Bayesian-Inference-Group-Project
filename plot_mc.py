@@ -195,7 +195,7 @@ def simulator(num=500):
         pars = {'Omega_m': abs(np.random.normal(0.3,0.05,1)[0]), 
                 'Omega_lambda': abs(np.random.normal(0.7,0.1,1)[0]), 
                 'H0': np.random.normal(70,5,1)[0], 
-                #'M_nuisance': np.random.normal(-19, 1, 1)[0],
+                'M_nuisance': np.random.normal(-19, 1, 1)[0],
                 'Omega_k': np.random.normal(0., 0.01, 1)[0]}
         #_loglk, pars = LK.likelihood_cal(pars, ifsys=False)
         samples.append(pars)
