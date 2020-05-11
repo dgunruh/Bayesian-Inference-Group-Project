@@ -297,10 +297,54 @@ class LK:
         return c/H0
 
 
+### TESTS ###
+
+def test_hubble_distance():
+    lk = LK()
+    assert lk.hubble_distance(100) == 3000, 'Error: Hubble distance calculation'\
+                                            ' returned unexpected value'
+    print("Hubble distance calculation passed test")
+
+def test_integrand():
+    lk = LK()
+    pars = {'Omega_m': 0.30, 'Omega_lambda': 0.70, 'H0': 72.0, 'Omega_k': 0.0}
+    val = round(lk.integrand(1, pars), 6)
+    expected = 0.567962
+    assert val == expected, 'Error: E(z) calculation producing bad results'
+    print("E(z) calculation test passed")
+
+def test_luminosity_distances():
+    lk = LK()
+    pars_flat = {'Omega_m': 0.30, 'Omega_lambda': 0.70, 'H0': 72.0, 'Omega_k': 0.0}
+    pars_negative = {'Omega_m': 0.35, 'Omega_lambda': 0.70, 'H0': 72.0, 'Omega_k': -0.05}
+    pars_positive ={'Omega_m': 0.30, 'Omega_lambda': 0.65, 'H0': 72.0, 'Omega_k': 0.05}
+
+
+    lds_flat = lk.luminosity_distances(pars_flat)
+    num_lds = len(lds_flat)
+    low_passed = round(lds_flat[0], 3) == 58.963
+    high_passed = round(lds_flat[num_lds -1], 3) == 11602.331
+    assert low_passed and high_passed, 'Error: luminosity distance calculation' \
+                                       ' failed for flat model'
+    print("Luminosity distance test passed for flat cosmological model")
+
+    lds_negative = lk.luminosity_distances(pars_negative)
+    low_passed = round(lds_negative[0], 3) == 58.953
+    high_passed = round(lds_negative[num_lds -1], 3) == 11261.881
+    assert low_passed and high_passed, 'Error: luminosity distance calculation' \
+                                       ' failed for negative Omega_k model'
+    print("Luminosity distance test passed for negative omegaK cosmological model")
+
+    lds_positive = lk.luminosity_distances(pars_positive)
+    low_passed = round(lds_positive[0], 3) == 58.943
+    high_passed = round(lds_positive[num_lds -1], 3) == 11508.527
+    assert low_passed and high_passed, 'Error: luminosity distance calculation' \
+                                       ' failed for positive Omega_k model'
+    print("Luminosity distance test passed for positive omegaK cosmological model")
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     lk = LK()
-    params = {'Omega_m': 0.3, 'Omega_lambda': 0.7, 'H0': 72.0, 'M_nuisance': -19.0, 'Omega_k': 0.0}
+    params = {'Omega_m': 0.29, 'Omega_lambda': 0.71, 'H0': 72.0, 'M_nuisance': -19.0, 'Omega_k': 0.0}
     chi2, pars = lk.likelihood_cal(params)
     print(chi2)
