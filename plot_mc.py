@@ -211,11 +211,45 @@ def trace_plot(parameters):
     plt.title('Trace Plot')
     plt.show()
 
+def post_prob(parameters, element='H0', xbin=50):
+    keys = parameters[1].keys()
+    latex_dic = {'Omega_m': r"$\Omega_m$",
+                 'Omega_lambda': r"$\Omega_{\Lambda}$",
+                 'H0': r"$H_0$",
+                 'M_nuisance': r"$M$",
+                 'Omega_k': r"$\Omega_k$"}
+    label = latex_dic[element]
 
+    params = {'legend.fontsize': 16,
+          'figure.figsize': (15, 5),
+         'axes.labelsize': 17,
+         'axes.titlesize':20,
+         'xtick.labelsize':10,
+         'ytick.labelsize':10,
+         'ytick.major.size': 5.5,
+         'axes.linewidth': 2}
+    plt.rcParams.update(params)
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+    fig, axs = plt.subplots(nrows=1, ncols=1, sharex=True, figsize=(15, 10))
+    _element = []
+    for _par in parameters:
+        _element.append(_par.get(element))
+    
+    quantile = np.quantile(_element, [0.021, 0.16, 0.5, 0.84, 0.979])
+    x_value = np.linspace(quantile[0], quantile[-1], xbin)
+    prob, x_value = np.histogram(_element, bins=x_value)
+    x_value = x_value[:-1]
+    prob = prob/np.sum(prob)
+    axs.step(x_value, prob)
+
+    axs.set_xlabel(label)
+    axs.set_ylabel('Posterior Probability')
+    axs.set_title('Posterior Probability for '+label)
+    plt.show()
 
 if __name__ == '__main__':
 
-    samples = Chain.simulator(1000)  #plot data from simulator, just a test
+    samples = Chain.simulator(10000)  #plot data from simulator, just a test
     
     mcmc_result(samples) #check all the parameters
     
@@ -223,5 +257,5 @@ if __name__ == '__main__':
     
     omega_m, omega_lambda, prob, quantile_nosys = samples_process(samples=samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40) #fig 18
     fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[], quantile_nosys=quantile_nosys)  #fig 18
-    
+    post_prob(samples, element='H0')
     print ("plot_mc.py is tested!")

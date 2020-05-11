@@ -61,6 +61,7 @@ if __name__ == '__main__':
     #plot_mc.fig18(omega_m, omega_lambda, prob_nosys=prob_nosys, prob_sys=prob_sys,
     #              quantile_nosys=quantile_nosys, quantile_sys=quantile_sys)  #final fig 18
     #"""
+    plot_mc.post_prob(cha.samples, element='H0', xbin=50) #plot the posterior probability for any element
 
     acceptance_rate = (1.0*sam.accepted)/(1.0*sample_num)
     print("acceptance rate = ",acceptance_rate)
