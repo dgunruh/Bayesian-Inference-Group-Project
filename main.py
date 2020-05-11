@@ -5,10 +5,11 @@ import likelihood as lk
 import Chain as c
 import MCsampler
 import plot_mc
+import os
 
 if __name__ == '__main__':
     runiterate = False
-    sample_num = 50000    #total number of sample drawn
+    sample_num = 1000    #total number of sample drawn
     cov_ite_num = 2    #total iterate number to get a proper covariant matrix
     parms = ['Omega_m','Omega_lambda','H0','M_nuisance','Omega_k']
     initial_condition = {'Omega_m': 0.3, 'Omega_lambda': 0.7, 'H0': 74.0,
@@ -49,19 +50,22 @@ if __name__ == '__main__':
     #"""All the plots
     
     #samples = cha.samples #plot the MCMC data
-    samples = c.simulator(1000)  #plot data from simulator, just a test
+    #samples = c.simulator(1000)  #plot data from simulator, just a test
     
-    plot_mc.mcmc_result(cha.samples) #check all the parameters
+    plot_mc.mcmc_result(cha.samples, savepath=os.getcwd() + '/results/mcmc.png') #check all the parameters
     
-    plot_mc.trace_plot(cha.samples) #trace plot as a sanity check
+    plot_mc.trace_plot(cha.samples, savepath=os.getcwd() + '/results/trace.png') #trace plot as a sanity check
     
     omega_m, omega_lambda, prob_nosys, quantile_nosys = plot_mc.samples_process(samples=cha.samples, x_range=[0, 1.6], y_range=[0, 2.5], xbin=30, ybin=40)  #fig 18
     #omega_m, omega_lambda, prob_sys, quantile_sys = plot_mc.samples_process(samples=cha.samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40) #fig 18
-    plot_mc.fig18(omega_m, omega_lambda, prob_nosys=prob_nosys, prob_sys=[], quantile_nosys=quantile_nosys)  #fig 18
+    plot_mc.fig18(omega_m, omega_lambda, prob_nosys=prob_nosys, prob_sys=[],
+                  quantile_nosys=quantile_nosys, quantile_sys=[[],[]], savepath=os.getcwd() + '/results/fig18.png')  #fig 18
     #plot_mc.fig18(omega_m, omega_lambda, prob_nosys=prob_nosys, prob_sys=prob_sys,
-    #              quantile_nosys=quantile_nosys, quantile_sys=quantile_sys)  #final fig 18
+    #              quantile_nosys=quantile_nosys, quantile_sys=quantile_sys, savepath=os.getcwd() + '/results/fig18.png')  #final fig 18
+    
+    plot_mc.post_prob(cha.samples, element='H0',
+                      xbin=50, savepath=os.getcwd() + '/results/post_prob_H0.png') #plot the posterior probability for any element
     #"""
-    plot_mc.post_prob(cha.samples, element='H0', xbin=50) #plot the posterior probability for any element
 
     acceptance_rate = (1.0*sam.accepted)/(1.0*sample_num)
     print("acceptance rate = ",acceptance_rate)

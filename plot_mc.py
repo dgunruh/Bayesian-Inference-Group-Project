@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import corner
 import Chain
+import os
 #mcmc_result(cha.samples)
 #trace_plot(cha.samples)
 #omega_m, omega_lambda, prob = samples_process(samples=cha.samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40)
@@ -27,7 +28,8 @@ def samples_process(samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin
     quantile = [np.quantile(_omega_m, [0.16, 0.5, 0.84]), np.quantile(_omega_L, [0.16, 0.5, 0.84])]
     return omega_m, omega_lambda, prob, quantile
 
-def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[], quantile_sys=[[],[]], quantile_nosys=[[],[]]):
+def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[],
+          quantile_sys=[[],[]], quantile_nosys=[[],[]], savepath=[]):
     params = {'legend.fontsize': 16,
               'figure.figsize': (15, 5),
              'axes.labelsize': 17,
@@ -146,10 +148,11 @@ def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[], quantile_sys=
     axHisty.set_ylim(ymin,ymax)
     ax2.set_xlim(xmin,xmax)
     ax2.set_ylim(ymin,ymax)
-    
+    if savepath:
+        fig.savefig(savepath, format='png', dpi=600)
     plt.show()
 
-def mcmc_result(parameters):
+def mcmc_result(parameters, savepath=[]):
     keys = parameters[1].keys()
     latex_dic = {'Omega_m': r"$\Omega_m$",
                  'Omega_lambda': r"$\Omega_{\Lambda}$",
@@ -173,9 +176,11 @@ def mcmc_result(parameters):
         ax.spines['right'].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('none')
+    if savepath:
+        figure.savefig(savepath, format='png', dpi=600)
     plt.show()
 
-def trace_plot(parameters):
+def trace_plot(parameters, savepath=[]):
     keys = parameters[1].keys()
     latex_dic = {'Omega_m': r"$\Omega_m$",
                  'Omega_lambda': r"$\Omega_{\Lambda}$",
@@ -209,9 +214,11 @@ def trace_plot(parameters):
     plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
     plt.xlabel('steps', size=20, labelpad=12)
     plt.title('Trace Plot')
+    if savepath:
+        fig.savefig(savepath, format='png', dpi=600)
     plt.show()
 
-def post_prob(parameters, element='H0', xbin=50):
+def post_prob(parameters, element='H0', xbin=50, savepath=[]):
     keys = parameters[1].keys()
     latex_dic = {'Omega_m': r"$\Omega_m$",
                  'Omega_lambda': r"$\Omega_{\Lambda}$",
@@ -248,24 +255,27 @@ def post_prob(parameters, element='H0', xbin=50):
     axs.axvline(quantile[1], color='red', linestyle='--')
     axs.axvline(quantile[2], color='red', linestyle='--')
     axs.axvline(quantile[3], color='red', linestyle='--')
-    axs.text(0.55, 0.95, r"$\Omega_m$ = "+str(x0)+r"$^{"+str(up)+"}_{"+str(down)+"}$", 
+    axs.text(0.55, 0.95, label+ r" = "+str(x0)+r"$^{"+str(up)+"}_{"+str(down)+"}$", 
             transform=axs.transAxes, color='red', size=15, alpha=0.7)
 
     
     axs.set_xlabel(label)
     axs.set_ylabel('Posterior Probability')
-    axs.set_title('Posterior Probability for '+label)
+    axs.set_title('Posterior Probability for ' + label)
+    if savepath:
+        fig.savefig(savepath, format='png', dpi=600)
     plt.show()
 
 if __name__ == '__main__':
 
     samples = Chain.simulator(10000)  #plot data from simulator, just a test
     
-    #mcmc_result(samples) #check all the parameters
+    mcmc_result(samples) #check all the parameters
     
-    #trace_plot(samples) #trace plot as a sanity check
+    trace_plot(samples) #trace plot as a sanity check
     
-    #omega_m, omega_lambda, prob, quantile_nosys = samples_process(samples=samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40) #fig 18
-    #fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[], quantile_nosys=quantile_nosys)  #fig 18
+    omega_m, omega_lambda, prob, quantile_nosys = samples_process(samples=samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40) #fig 18
+    fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[],
+          quantile_nosys=quantile_nosys)  #fig 18
     post_prob(samples, element='H0', xbin=70)
     print ("plot_mc.py is tested!")
