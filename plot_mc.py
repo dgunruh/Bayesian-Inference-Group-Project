@@ -52,12 +52,12 @@ def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[], quantile_sys=
                     alpha=0.9, linewidths=2)
         x1, x0, x2 = np.round(quantile_sys[0], 3)
         up = np.round(x2 - x0, 3)
-        down = np.round(x0 - x1, 3)
+        down = np.round(x1 - x0, 3)
         ax.text(0.1, 0.9, r"$\Omega_m$ = "+str(x0)+r"$^{"+str(up)+"}_{"+str(down)+"}$", 
                 transform=ax.transAxes, color='red', size=15, alpha=0.7)
         x1, x0, x2 = np.round(quantile_sys[1], 3)
         up = np.round(x2 - x0, 3)
-        down = np.round(x0 - x1, 3)
+        down = np.round(x1 - x0, 3)
         ax.text(0.1, 0.85, r"$\Omega_{\Lambda}$ = "+str(x0)+r"$^{"+str(up)+"}_{"+str(down)+"}$", 
                 transform=ax.transAxes, color='red', size=15, alpha=0.7)
         ax.text(0.5,1.1,"Pantheon", color='red',rotation=40,alpha=0.7, size=15)
@@ -65,12 +65,12 @@ def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[], quantile_sys=
         _chi2_nosys = -2*np.log(prob_nosys)
         x1, x0, x2 = np.round(quantile_nosys[0], 3)
         up = np.round(x2 - x0, 3)
-        down = np.round(x0 - x1, 3)
+        down = np.round(x1 - x0, 3)
         ax.text(0.1, 0.8, r"$\Omega_m$ = "+str(x0)+r"$^{"+str(up)+"}_{"+str(down)+"}$", 
                 transform=ax.transAxes, color=(0.5,0.5,0.5), size=15, alpha=0.7)
         x1, x0, x2 = np.round(quantile_nosys[1], 3)
         up = np.round(x2 - x0, 3)
-        down = np.round(x0 - x1, 3)
+        down = np.round(x1 - x0, 3)
         ax.text(0.1, 0.75, r"$\Omega_{\Lambda}$ = "+str(x0)+r"$^{"+str(up)+"}_{"+str(down)+"}$", 
                 transform=ax.transAxes, color=(0.5,0.5,0.5), size=15, alpha=0.7)
         ax.contourf(omega_m, omega_lambda, np.transpose(prob_nosys), 
