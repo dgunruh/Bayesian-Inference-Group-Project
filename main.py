@@ -55,8 +55,8 @@ if __name__ == '__main__':
     
     plot_mc.trace_plot(cha.samples) #trace plot as a sanity check
     
-    omega_m, omega_lambda, prob = plot_mc.samples_process(samples=cha.samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40) #fig 18
-    plot_mc.fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[]) #fig 18
+    omega_m, omega_lambda, prob, quantile_nosys = plot_mc.samples_process(samples=cha.samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40) #fig 18
+    plot_mc.fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[], quantile_nosys=quantile_nosys)  #fig 18
     #"""
 
     acceptance_rate = (1.0*sam.accepted)/(1.0*sample_num)
