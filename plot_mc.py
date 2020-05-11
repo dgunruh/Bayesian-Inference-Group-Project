@@ -242,6 +242,16 @@ def post_prob(parameters, element='H0', xbin=50):
     prob = prob/np.sum(prob)
     axs.step(x_value, prob)
 
+    up = np.round(quantile[3] - quantile[2], 3)
+    down = np.round(quantile[1] - quantile[2], 3)
+    x0 = np.round(quantile[2])
+    axs.axvline(quantile[1], color='red', linestyle='--')
+    axs.axvline(quantile[2], color='red', linestyle='--')
+    axs.axvline(quantile[3], color='red', linestyle='--')
+    axs.text(0.55, 0.95, r"$\Omega_m$ = "+str(x0)+r"$^{"+str(up)+"}_{"+str(down)+"}$", 
+            transform=axs.transAxes, color='red', size=15, alpha=0.7)
+
+    
     axs.set_xlabel(label)
     axs.set_ylabel('Posterior Probability')
     axs.set_title('Posterior Probability for '+label)
@@ -251,11 +261,11 @@ if __name__ == '__main__':
 
     samples = Chain.simulator(10000)  #plot data from simulator, just a test
     
-    mcmc_result(samples) #check all the parameters
+    #mcmc_result(samples) #check all the parameters
     
-    trace_plot(samples) #trace plot as a sanity check
+    #trace_plot(samples) #trace plot as a sanity check
     
-    omega_m, omega_lambda, prob, quantile_nosys = samples_process(samples=samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40) #fig 18
-    fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[], quantile_nosys=quantile_nosys)  #fig 18
-    post_prob(samples, element='H0')
+    #omega_m, omega_lambda, prob, quantile_nosys = samples_process(samples=samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40) #fig 18
+    #fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[], quantile_nosys=quantile_nosys)  #fig 18
+    post_prob(samples, element='H0', xbin=70)
     print ("plot_mc.py is tested!")
