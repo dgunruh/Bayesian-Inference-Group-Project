@@ -343,6 +343,7 @@ def test_luminosity_distances():
     assert low_passed and high_passed, 'Error: luminosity distance calculation' \
                                        ' failed for positive Omega_k model'
     print("Luminosity distance test passed for positive omegaK cosmological model")
+
 def test_loading_data():
     lk = LK()
     #test data loading part
@@ -359,7 +360,7 @@ def test_likelihood():
     loglk_nosys=np.zeros((nx,ny))
     omega_m = np.linspace(0,1.6,nx)
     omega_lambda = np.linspace(0,2.5,ny)
-    par_record = []
+
     for _omega_m in omega_m:
         j=0
         pars.update({'Omega_m': _omega_m})
