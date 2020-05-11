@@ -7,6 +7,7 @@ from matplotlib.image import NonUniformImage
 import matplotlib.pyplot as plt
 import numpy as np
 import corner
+import Chain
 #mcmc_result(cha.samples)
 #trace_plot(cha.samples)
 #omega_m, omega_lambda, prob = samples_process(samples=cha.samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40)
@@ -189,24 +190,17 @@ def trace_plot(parameters):
     plt.title('Trace Plot')
     plt.show()
 
-def simulator(num=500):
-    samples = []
-    for i in np.arange(num):
-        pars = {'Omega_m': abs(np.random.normal(0.3,0.05,1)[0]), 
-                'Omega_lambda': abs(np.random.normal(0.7,0.1,1)[0]), 
-                'H0': np.random.normal(70,5,1)[0], 
-                'M_nuisance': np.random.normal(-19, 1, 1)[0],
-                'Omega_k': np.random.normal(0., 0.01, 1)[0]}
-        #_loglk, pars = LK.likelihood_cal(pars, ifsys=False)
-        samples.append(pars)
-    return samples
+
 
 if __name__ == '__main__':
-    samples = simulator(1000)  #plot data from simulator, just a test
+
+    samples = Chain.simulator(1000)  #plot data from simulator, just a test
     
     mcmc_result(samples) #check all the parameters
     
     trace_plot(samples) #trace plot as a sanity check
     
     omega_m, omega_lambda, prob = samples_process(samples=samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40) #fig 18
-    fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[]) #fig 18
+    fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[])  #fig 18
+    
+    print ("plot_mc.py is tested!")
