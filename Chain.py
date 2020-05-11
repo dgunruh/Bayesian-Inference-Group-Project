@@ -91,8 +91,8 @@ def simulator(num=500, sigma=[0.05, 0.1, 5, 1, 0.01]):
         samples.append(pars)
     return samples
 
-
-if __name__ == '__main__':
+def test_Chain():
+    #test the function add_sample and cov_cal in Chain.py
     sigma = [0.05, 0.1, 5, 1, 0.01]
     chain = Chain(simulator(1, sigma=sigma)[0])
     for i in np.arange(1000):
@@ -112,3 +112,6 @@ if __name__ == '__main__':
         print ('Chain.py is tested!')
     else:
         assert isclose, "The cov matrix of generating function is not well calculated"
+
+if __name__ == '__main__':
+    test_Chain()
