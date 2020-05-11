@@ -9,11 +9,43 @@ import numpy as np
 import corner
 import Chain
 import os
-#mcmc_result(cha.samples)
-#trace_plot(cha.samples)
-#omega_m, omega_lambda, prob = samples_process(samples=cha.samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40)
-#fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[])
-def samples_process(samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40):
+
+def samples_process(samples, x_range=[0, 1.6], y_range=[0, 2.5], xbin=30, ybin=40):
+    """
+    process the input parameters from chain and output the grid and probability
+    -----------
+
+    Parameters:
+    -----------
+    samples : array like;
+    all the samples from chain
+
+    x_range : array like, optional;
+    therange of omega_m that we want to take care of
+
+    y_range : array like, optional;
+    the range of omega_lambda that we want to take care of
+
+    xbin : int, optional;
+    bin number of omega_m
+
+    ybin : int, optional;
+    bin number of omega_lambda
+
+    Returns:
+    --------
+    omega_m : array like;
+    grid for omega_m in the final plot
+
+    omega_lambda : array like;
+    grid for omega_lambda in the final plot
+
+    prob : array like
+    normalized 2D probability distribution
+
+    quantile : array like
+    the mean value and 3 sigma value for omega_m and omega_lambda
+    """
     _omega_m = []
     _omega_L = []
     for _pars in samples:
@@ -29,7 +61,35 @@ def samples_process(samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin
     return omega_m, omega_lambda, prob, quantile
 
 def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[],
-          quantile_sys=[[],[]], quantile_nosys=[[],[]], savepath=[]):
+          quantile_sys=[[], []], quantile_nosys=[[], []], savepath=[]):
+    """
+    function to plot the figure 18 in the paper
+    -----------
+
+    Parameters:
+    -----------
+    omega_m : array like;
+    grid for omega_m in the final plot
+
+    omega_lambda : array like;
+    grid for omega_lambda in the final plot
+
+    prob_sys: array like;
+    normalized 2D probability distribution for the model with systematic error
+
+    prob_nosys: array like;
+    normalized 2D probability distribution for the model without systematic error
+
+    quantile_sys: array like;
+    the mean value and 3 sigma value for omega_m and omega_lambda for the model with systematic error
+
+    quantile_nosys: array like;
+    the mean value and 3 sigma value for omega_m and omega_lambda for the model without systematic error
+
+    savepath: string;
+    the path you want to save the plot
+    """
+
     params = {'legend.fontsize': 16,
               'figure.figsize': (15, 5),
              'axes.labelsize': 17,
@@ -39,7 +99,6 @@ def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[],
              'ytick.major.size': 5.5,
              'axes.linewidth': 2}
     plt.rcParams.update(params)
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
     fig, axs = plt.subplots(1, 1, figsize=(10,10))
     
     ax = axs
@@ -114,10 +173,6 @@ def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[],
     axHistx.xaxis.set_major_formatter(nullfmt)
     axHisty.yaxis.set_major_formatter(nullfmt)
     # darw the histogram
-    binwidth = 0.05
-    xbins = np.arange(0, 0.5 + binwidth, binwidth)
-    binwidth = 0.1
-    ybins = np.arange(0, 0.5 + binwidth, binwidth)
     if len(prob_sys) != 0:
         axHistx.plot(omega_m, np.sum(np.transpose(prob_sys), axis=0),
                      color = (0.76171875, 0.1640625 , 0.18359375))
@@ -153,6 +208,18 @@ def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[],
     plt.show()
 
 def mcmc_result(parameters, savepath=[]):
+    """
+    the mcmc results for all the elements
+    -----------
+
+    Parameters:
+    -----------
+    parameters : array like;
+    all the samples from chain
+
+    savepath: string;
+    the path you want to save the plot
+    """
     keys = parameters[1].keys()
     latex_dic = {'Omega_m': r"$\Omega_m$",
                  'Omega_lambda': r"$\Omega_{\Lambda}$",
@@ -181,6 +248,19 @@ def mcmc_result(parameters, savepath=[]):
     plt.show()
 
 def trace_plot(parameters, savepath=[]):
+    """
+    trace plots for all the elements
+    -----------
+
+    Parameters:
+    -----------
+    parameters : array like;
+    all the samples from chain
+
+    savepath: string;
+    the path you want to save the plot
+    """
+
     keys = parameters[1].keys()
     latex_dic = {'Omega_m': r"$\Omega_m$",
                  'Omega_lambda': r"$\Omega_{\Lambda}$",
@@ -200,7 +280,6 @@ def trace_plot(parameters, savepath=[]):
          'ytick.major.size': 5.5,
          'axes.linewidth': 2}
     plt.rcParams.update(params)
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
     fig, axs = plt.subplots(nrows=len(keys), ncols=1, sharex=True, figsize=(15, 10), gridspec_kw={'hspace': 0})
     pars_array = []
     for _pars in parameters:
@@ -219,7 +298,25 @@ def trace_plot(parameters, savepath=[]):
     plt.show()
 
 def post_prob(parameters, element='H0', xbin=50, savepath=[]):
-    keys = parameters[1].keys()
+    """
+    posterior probability for the given element
+    -----------
+
+    Parameters:
+    -----------
+    parameters : array like;
+    all the samples from chain
+
+    element : string;
+    the element you want to deal with
+
+    xbin : int, optional;
+    bin size of the plot
+
+    savepath: string;
+    the path you want to save the plot
+    """
+
     latex_dic = {'Omega_m': r"$\Omega_m$",
                  'Omega_lambda': r"$\Omega_{\Lambda}$",
                  'H0': r"$H_0$",
@@ -236,7 +333,6 @@ def post_prob(parameters, element='H0', xbin=50, savepath=[]):
          'ytick.major.size': 5.5,
          'axes.linewidth': 2}
     plt.rcParams.update(params)
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
     fig, axs = plt.subplots(nrows=1, ncols=1, sharex=True, figsize=(15, 10))
     _element = []
     for _par in parameters:
