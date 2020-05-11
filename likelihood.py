@@ -384,6 +384,49 @@ def test_likelihood():
                   prob_sys=prob_sys, prob_nosys=prob_nosys,
                   quantile_sys=[[0.319, 0.249,0.389],[0.733,0.733-0.113,0.733+0.113]], quantile_nosys=[[0.348, 0.348-0.04,0.348+0.04],[0.827,0.827-0.068,0.827+0.068]])
 
+def test_luminosity_delegate():
+    lk = LK()
+    pars_flat = {'Omega_m': 0.30, 'Omega_lambda': 0.70, 'H0': 72.0, 'Omega_k': 0.0}
+    pars_negative_curvature = {'Omega_m': 0.30, 'Omega_lambda': 0.75, 'H0': 72.0, 'Omega_k': -0.05}
+    pars_positive_curvature = {'Omega_m': 0.30, 'Omega_lambda': 0.65, 'H0': 72.0, 'Omega_k': 0.05}
+    z = 1
+    integral_val = 0.1
+
+    val_flat = lk.luminosity_delegate(z, integral_val, pars_flat)
+    val_negative_curvature = lk.luminosity_delegate(z, integral_val, pars_negative_curvature)
+    val_positive_curvature = lk.luminosity_delegate(z, integral_val, pars_positive_curvature)
+
+    assert round(val_flat,5) == 833.33333, 'Error: luminosity delegate test failed'\
+                                           ' for flat cosmological model'
+
+    assert round(val_negative_curvature, 5) == 833.26389, 'Error: luminosity'\
+                            ' delegate test failed for negative curvature model'
+    assert round(val_positive_curvature,5) == 833.40278, 'Error: luminosity'\
+                            ' delegate test failed for positive curvature model'
+
+    print("Function luminosity_delegate past all tests")
+
+def test_compute_model():
+    lk = LK()
+    pars_flat = {'Omega_m': 0.30, 'Omega_lambda': 0.70, 'H0': 72.0, 'Omega_k': 0.0}
+    pars_negative_curvature = {'Omega_m': 0.30, 'Omega_lambda': 0.75, 'H0': 72.0, 'Omega_k': -0.05}
+    pars_positive_curvature = {'Omega_m': 0.30, 'Omega_lambda': 0.65, 'H0': 72.0, 'Omega_k': 0.05}
+    model_flat = lk.compute_model(pars_flat)
+    model_negative = lk.compute_model(pars_negative_curvature)
+    model_positive = lk.compute_model(pars_positive_curvature)
+
+    assert round(model_flat[0], 3) == 33.853 and round(model_flat[39], 3) == 45.323,\
+           'Error: compute_model function failed test for flat model'
+
+    assert round(model_negative[0], 4) == 33.8537 and round(model_negative[39], 3) == 45.341,\
+           'Error: compute_model function failed test for negatively curved model'
+
+    assert round(model_positive[0], 3) == 33.852 and round(model_positive[39], 3) == 45.305,\
+           'Error: compute_model function failed test for positively curved model'
+
+    print("Function compute_model passed all tests!")
+
+
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
@@ -395,3 +438,5 @@ if __name__ == '__main__':
     test_integrand()
     test_luminosity_distances()
     test_likelihood() #This may take one minute to run
+    test_luminosity_delegate()
+    test_compute_model()
