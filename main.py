@@ -175,7 +175,7 @@ def create_H_posterior(systematic, det_cov=False):
         cha = sam.return_chain()
 
     plot_mc.mcmc_result(cha.samples, savepath=os.getcwd() + '/results/mcmc.png') #check all the parameters
-    plot_mc.trace_plot(cha.samples, savepath=os.getcwd() + '/results/trace.png') #trace plot as a sanity check
+    #plot_mc.trace_plot(cha.samples, savepath=os.getcwd() + '/results/trace.png') #trace plot as a sanity check
     plot_mc.post_prob(cha.samples, element='H0',
                       xbin=50, savepath=os.getcwd() + '/results/post_prob_H0.png')
 
