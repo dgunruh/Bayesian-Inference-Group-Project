@@ -1,6 +1,3 @@
-# Group Project Plan
-Yize Dong, Davis Unruh, Patrick Wells, Tianqi Zhang
-
 # Results:
 ## Classes and functions
 **There are four main parts for our project:**
@@ -21,6 +18,8 @@ python likelihood.py
 ```
 in a terminal.
 
+# Group Project Plan
+Yize Dong, Davis Unruh, Patrick Wells, Tianqi Zhang
 # Code Modules:
 
 **Sampler: Davis/ Tianqi**
