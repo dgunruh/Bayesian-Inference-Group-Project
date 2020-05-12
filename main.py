@@ -72,9 +72,13 @@ def prep_fig18(systematic, det_cov=False):
         np.savetxt("cov.txt",cov)
 
     else:
-        cov = np.loadtxt("cov.txt")
-        sam.cov_alpha = 100.0
-        sam.learncov(cov)
+        try:
+            cov = np.loadtxt("cov.txt")
+            sam.cov_alpha = 100.0
+            sam.learncov(cov)
+        except OSError:
+            print("Covariance matrix not found. Running with default matrix and cov_alpha.")
+
         for _ in range(sample_num):
             sam.add_to_chain()
         cha = sam.return_chain()
@@ -86,18 +90,30 @@ def prep_fig18(systematic, det_cov=False):
         
     return omega_m, omega_lambda, prob, quantile
 
-def create_fig18():
+def create_fig18(det_cov=False):
     """
-    This function is used to create figure 18
+    This function is used to create figure 18.
+
+    Inputs:
+    ---------
+    det_cov: Boolean
+        Determines whether the program needs to determine the 
+        generating function covariance. If not, it is assumed
+        that one was previously generated. Either way, only
+        the first function run will need it. 
     """
-    omega_m, omega_lambda, prob_nosys, quantile_nosys = prep_fig18(False, False)
+    #Get non-systematic probabilities
+    omega_m, omega_lambda, prob_nosys, quantile_nosys = prep_fig18(False, det_cov)
+    
+    #Get systematic probabilities
     omega_m, omega_lambda, prob_sys, quantile_sys = prep_fig18(True, False)
+
     plot_mc.fig18(omega_m, omega_lambda, prob_nosys=prob_nosys, prob_sys=prob_sys,
                 quantile_nosys=quantile_nosys, quantile_sys=quantile_sys, savepath=os.getcwd() + '/results/fig18.png')
 
 def create_H_posterior(systematic, det_cov=False):
     '''
-    A function which creates a replica of Fig. 18 from the paper.
+    A function which creates the posterior distribution of H0.
 
     Inputs:
     ------------
@@ -110,7 +126,7 @@ def create_H_posterior(systematic, det_cov=False):
         or not. If not, it is assumed that it was already calculated, and 
         the program will load it. 
     '''
-    sample_num = 20000    #total number of samples drawn
+    sample_num = 100000    #total number of samples drawn
     cov_ite_num = 2    #total number of iterations to get a proper covariant matrix
 
     #parms = ['Omega_m','Omega_lambda','H0','M_nuisance','Omega_k']
@@ -147,9 +163,13 @@ def create_H_posterior(systematic, det_cov=False):
         np.savetxt("cov.txt",cov)
 
     else:
-        cov = np.loadtxt("cov.txt")
-        sam.cov_alpha = 100.0
-        sam.learncov(cov)
+        try:
+            cov = np.loadtxt("cov.txt")
+            sam.cov_alpha = 100.0
+            sam.learncov(cov)
+        except OSError:
+            print("Covariance matrix not found. Running with default matrix and cov_alpha.")
+
         for _ in range(sample_num):
             sam.add_to_chain()
         cha = sam.return_chain()
@@ -160,10 +180,9 @@ def create_H_posterior(systematic, det_cov=False):
                       xbin=50, savepath=os.getcwd() + '/results/post_prob_H0.png')
 
 if __name__ == '__main__':
-    #Create Fig. 18 without including systematic error. Make covariance matrix
-    #create_fig18(False, True)
-    #Create Fig. 18 while including systematic error
-    #create_fig18(True, False)
-    #Create posterior distribution of H if M has a prior of .042
-    create_fig18()
-    create_H_posterior(True, False)
+    #Create Fig. 18, including containing only statistical error, and including
+    # both statistical and systematic error
+    create_fig18(False)
+
+    #Create posterior distribution of H assuming M has a prior of .042
+    create_H_posterior(True)
