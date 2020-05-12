@@ -20,11 +20,11 @@ in a terminal.
 ## final plots
 **reproduce figure 18:**
 ![figure 18](/results/fig18.png)
-**mcmc result after adding the prior on M:**
+**mcmc result after adding the prior on M (with systematic error):**
 ![MCMC result](/results/mcmc.png)
-**trace plot:**
+**trace plot (with systematic error):**
 ![trace plot](/results/trace.png)
-**posterior probability distribution of H0 after adding prior on M:**
+**posterior probability distribution of H0 after adding prior on M (with systematic error):**
 ![posterior probability distribution of H0](/results/post_prob_H0.png)
 # Group Project Plan
 Yize Dong, Davis Unruh, Patrick Wells, Tianqi Zhang
