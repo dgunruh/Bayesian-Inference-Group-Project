@@ -1,7 +1,33 @@
+# Results:
+## Classes and functions
+**There are four main parts for our project:**
+1. [likelihood.py](/likelihood.py): loads the raw data, calculates the model luminosity distance and the log-likelihood
+2. [MCsampler.py](/MCsampler.py): Includes generating function, uses the likelihood calculated from likelihood.py to take steps
+3. [Chain.py](/Chain.py): Generates a chain for storing MCMC samples, also calculates the covariance matrix for generating function
+4. [plot_mc.py](/plot_mc.py): All the functions about plots. 
+## Top level calls
+All the modules are loaded in [main.py](/main.py), and the results can be produced by running:
+```
+python main.py
+```
+All the final plots are saved in [results](/results)
+## Tests
+In each file, we implement corresponding tests for the functions and classes in that file. For example, the test for [likelihood.py](/likelihood.py) can be done by running 
+```
+python likelihood.py
+```
+in a terminal.
+## final plots
+**reproduce figure 18:**
+![figure 18](/results/fig18.png)
+**mcmc result after adding the prior on M (with systematic error):**
+![MCMC result](/results/mcmc.png)
+**trace plot (with systematic error):**
+![trace plot](/results/trace.png)
+**posterior probability distribution of H0 after adding prior on M (with systematic error):**
+![posterior probability distribution of H0](/results/post_prob_H0.png)
 # Group Project Plan
 Yize Dong, Davis Unruh, Patrick Wells, Tianqi Zhang
-
-
 # Code Modules:
 
 **Sampler: Davis/ Tianqi**
