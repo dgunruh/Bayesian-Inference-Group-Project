@@ -39,7 +39,7 @@ def prep_fig18(systematic, det_cov=False):
     sample_num = 10000    #total number of samples drawn
     cov_ite_num = 2    #total number of iterations to get a proper covariant matrix
 
-    parms = ['Omega_m','Omega_lambda','H0','M_nuisance','Omega_k']
+    #parms = ['Omega_m','Omega_lambda','H0','M_nuisance','Omega_k']
     initial_condition = {'Omega_m': 0.3, 'Omega_lambda': 0.7, 'H0': 74.0,
                           'M_nuisance': -19.23, 'Omega_k': 0.0}
     #All priors will be uniform
@@ -113,7 +113,7 @@ def create_H_posterior(systematic, det_cov=False):
     sample_num = 20000    #total number of samples drawn
     cov_ite_num = 2    #total number of iterations to get a proper covariant matrix
 
-    parms = ['Omega_m','Omega_lambda','H0','M_nuisance','Omega_k']
+    #parms = ['Omega_m','Omega_lambda','H0','M_nuisance','Omega_k']
     initial_condition = {'Omega_m': 0.3, 'Omega_lambda': 0.7, 'H0': 74.0,
                           'M_nuisance': -19.23, 'Omega_k': 0.0}
     
@@ -154,7 +154,7 @@ def create_H_posterior(systematic, det_cov=False):
             sam.add_to_chain()
         cha = sam.return_chain()
 
-    plot._mc.mcmc_result(cha.samples, savepath=os.getcwd() + '/results/mcmc.png') #check all the parameters
+    plot_mc.mcmc_result(cha.samples, savepath=os.getcwd() + '/results/mcmc.png') #check all the parameters
     plot_mc.trace_plot(cha.samples, savepath=os.getcwd() + '/results/trace.png') #trace plot as a sanity check
     plot_mc.post_prob(cha.samples, element='H0',
                       xbin=50, savepath=os.getcwd() + '/results/post_prob_H0.png')
