@@ -6,7 +6,7 @@ import Chain
 
 
 class MCMC(object):
-    def __init__(self, initial_condition, param_priors, systematic_error=True):
+    def __init__(self, initial_condition, param_priors, step_sigmas, systematic_error=False, degeneracy=True):
         """
         sampler class
 
@@ -18,9 +18,18 @@ class MCMC(object):
         param_priors: Dictionary{String: String}
             A dictionary defining the prior distributions of the input parameters
 
+        step_sigma: [floats]
+            A list containing the parameter step standard deviations. The parameter
+            standard deviations determine how far each step of the generating function
+            is allowed to attempt to travel
+
         systematic_error: Boolean
             Tells the sampler whether to calculate the likelihood 
             with or without using the systematic error
+
+        degeneracy: Boolean
+            Tells the sampler whether the degenerate relationship between
+            M and H0 should be preserved or discarded.
 
         Attributes:
         ----------
@@ -61,11 +70,21 @@ class MCMC(object):
             be the std of a gaussian distribution. If the value
             is zero, then it is instead a uniform distribution
 
-        cov: float
-            The input covariance for the generating function
-        
-        accepted: int
-            Tells you how many sample is accepted
+        step_sigmas: [floats]
+            Storing the input step_sigmas as described above
+
+        cov_alpha: float
+            Determines the coefficient alpha multiplying the covariance
+            matrix
+
+        cov: array[floats]
+            The covariance matrix of the generating function
+
+        cov_inverse: array[floats]
+            The inverse of the covariance matrix
+
+        degeneracy: Boolean
+            Described above
 
         Usage example:
         ---------------
@@ -83,7 +102,8 @@ class MCMC(object):
                   "M_nuisance": 0.042,
                   "Omega_k": 0.0
         }
-        mcmc = MCsampler.MCMC(initial_params, priors)
+        scaling = [0.1, 0.1, 1.0, 0.1, 0.1]
+        mcmc = MCsampler.MCMC(initial_params, priors, scaling, True, False)
         mcmc.learncov(cov)
         for _ in range(number_steps):
             mcmc.add_to_chain()
@@ -99,8 +119,11 @@ class MCMC(object):
         self.candidate_params = {}
         self.candidate_prior_p = 1.0
         self.param_priors = param_priors
-        self.cov = np.identity(5)
-        self.accepted = 0
+        self.step_sigmas = step_sigmas
+        self.cov_alpha = 0.1
+        self.cov = self.cov_alpha*np.identity(5)
+        self.cov_inverse = np.linalg.inv(self.cov)
+        self.degeneracy = degeneracy
 
     def gen_func(self, pars=[], current=[]):
         """
@@ -123,11 +146,20 @@ class MCMC(object):
         #current = list(self.current_params.values())
         for i in range(5):
             for j in range(5):
-                index = index + (pars[i] - current[i]) * self.cov[i][j] * (
-                    pars[j] - current[j]
+                #index = index + (pars[i] - current[i]) * self.cov_inverse[i][j] * (
+                #    pars[j] - current[j]
+                #)
+                index = index + (current[i] - pars[i]) * self.cov_inverse[i][j] * (
+                    current[j] - pars[j]
                 )
 
-        nonnorm_pdf = math.exp(-1 * index)
+        #Alternate numpy version which gives same result
+        # delta = np.asarray(current) - np.asarray(pars)
+        # index = np.dot(np.dot(delta,self.cov_inverse),np.transpose(delta))
+        try:
+            nonnorm_pdf = math.exp(-1 * index)
+        except OverflowError:
+            nonnorm_pdf = 0
 
         return nonnorm_pdf
 
@@ -137,42 +169,47 @@ class MCMC(object):
         A real customized 5d random sampling would be wild, this is just a work around that
         makes sense to me. PLEASE let me know any possible improvement.
 
+        Returns:
+        -----------
+        potential_candidate:[float]
+        The potential candidate, elected by the generating function, to be judged.
+
         """
+
         current = list(self.current_params.values())
-        val = self.current_params["M_nuisance"] - 5 * np.log10(self.current_params["H0"])
+        val = self.current_params["M_nuisance"] + 5 * np.log10(self.current_params["H0"])
         deny = True
         steps = 0
+        #scaling = [0.1, 0.1, 1.0, 0.042, 0.1]
         while deny:
             steps = steps + 1
             assert steps < 1000, "Error,value is too small to judge"
             potential_candidate = []
             for i in range(5):
-                x = np.random.normal(loc=current[i])
-                if i == 0 or i == 1:
-                    while x < 0 or x > 2:
-                        x = np.random.normal(loc=current[i])
-                #if i == 3:
-                #    while np.isclose(x, val + 5 * np.log10(potential_candidate[2])):
-                #        x = np.random.normal(loc=current[i])
+                scaling = self.step_sigmas[i]
+                x = np.random.normal(loc=current[i],scale = scaling)
                 potential_candidate.append(x)
+            
             potential_candidate[4] = 1 - potential_candidate[0] - potential_candidate[1]
-            potential_candidate[3] = val + 5 * np.log10(potential_candidate[2])
+
+            if self.degeneracy:
+                potential_candidate[3] = val - 5 * np.log10(potential_candidate[2])
+
             value = self.gen_func(potential_candidate, current)
             judger = np.random.random_sample()
             if judger < value:
                 deny = False
 
-        # degeneracy: M + 5*np.log10(H0) can be considered one number.
-        # For the 1st chain: keep these degenerate. Future chains: prevent degeneracy
-        # x = self.current_params["M_nuisance"] - 5 * np.log10(self.current_params["H0"])
-        # new_M_nuisance = x + 5 * np.log10(new_H0)
-
-        # Adjusting Omega_k to fit the model
-        potential_candidate[4] = 1 - potential_candidate[0] - potential_candidate[1]
         return potential_candidate
 
     def learncov(self, cov):
-        self.cov = cov
+        '''
+        A function which feeds a new generating function covariance
+        matrix into MCsampler. This allows for iterative determination
+        of the covariance matrix. 
+        '''
+        self.cov = self.cov_alpha * cov
+        self.cov_inverse = np.linalg.inv(self.cov)
 
     def calc_p(self):
         """
@@ -196,31 +233,12 @@ class MCMC(object):
             self.candidate_params, self.sys_error
         )
 
-        # Calculate the weight, incorporating the prior probabilities
-        # weight = min(
-        #    1,
-        #    np.exp(log_likelihood_new)
-        #    * self.candidate_prior_p
-        #    / (np.exp(log_likelihood_old) * self.current_prior_p),
-        # )
-        candidate_vals = list(self.candidate_params.values())
-        current_vals = list(self.current_params.values())
         weight = min(
-            1,
-            ((log_likelihood_old
-            + np.log(self.current_prior_p)) * self.gen_func(candidate_vals, current_vals))
-            / ((log_likelihood_new + np.log(self.candidate_prior_p)) * self.gen_func(current_vals, candidate_vals)),
+           1,
+           np.exp(log_likelihood_new)
+           * self.candidate_prior_p
+           / (np.exp(log_likelihood_old) * self.current_prior_p),
         )
-
-        #if np.isneginf(log_likelihood_new):
-        #    weight = 0.0
-        #print("New log likelihood is: ", log_likelihood_new)
-        #print("P new: ",np.exp(log_likelihood_new))
-        # print("new prior P: ", self.candidate_prior_p)
-        #print("Old log likelihood is: ", log_likelihood_old)
-        #print("P old: ",np.exp(log_likelihood_old))
-        # print("Old prior P: ", self.current_prior_p)
-        #print("Weight is: ", weight)
 
         return weight
 
@@ -269,16 +287,18 @@ class MCMC(object):
             The dictionary containing the mapping of parameter values to
             parameter names of the new parameters.
         """
+
+        #Get candidate parameters and their prior probabilities
         candidate_param_values = self.draw_candidate()
         self.candidate_params = dict(
             zip(list(self.current_params.keys()), candidate_param_values)
         )
         self.candidate_prior_p = self.calc_prior_p(self.candidate_params)
+
+        #Calculate likelihood of these parameters being visited, and take step
         step_weight = self.calc_p()
-        #r = np.random.uniform(0.0, 1.0)
         r = np.random.random_sample()
         if r <= step_weight:
-            self.accepted = self.accepted + 1
             new_params = self.candidate_params
             self.current_prior_p = self.candidate_prior_p
         else:
@@ -316,3 +336,45 @@ class MCMC(object):
 
         self.chain = Chain.Chain(self.initial_params)
         self.current_params = self.initial_params
+
+def test_sampler():
+    cov = np.identity(5)
+    initial_params = {"Omega_m": 0.3,
+                     "Omega_lambda": 0.7,
+                     "H0": 74.0,
+                     "M_nuisance": -19.23,
+                     "Omega_k": 0.0,
+                    }
+    priors = {"Omega_m": 0.0,
+              "Omega_lambda": 0.0,
+              "H0": 0.0,
+              "M_nuisance": 0.042,
+              "Omega_k": 0.0
+              }
+    scaling = [0.1, 0.1, 1.0, 0.1, 0.1]
+    number_steps = 100
+    test_pass = True
+    try:
+        mcmc = MCMC(initial_params, priors, scaling, True, False)
+        print("Initializing Sampler")
+    except:
+        print("Cannot initialize Sampler, Please check input parameters")
+        test_pass = False
+    try:
+        mcmc.learncov(cov)
+        print("Obtaining Covariance Matrix")
+    except:
+        print("Cannot find covariance matrix")
+        test_pass = False
+    try:
+        for _ in range(number_steps):
+            mcmc.add_to_chain()
+    except:
+        test_pass = False
+        print("Cannot add to chain")
+    assert test_pass, "Test failed, chain not saved"
+    chain = mcmc.return_chain()
+    print("Test passed")
+
+if __name__ == '__main__':
+    test_sampler()

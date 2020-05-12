@@ -52,6 +52,19 @@ class Chain:
 
 
     def cov_cal(self,scale=1):
+        '''
+        Calculate the covariance matrix from current samples
+        
+        Parameters:
+        -----------
+        scale: float
+        Scale up the covariace matrix to fine tune the generating steps, default scale = 1
+
+        Return: numpy array
+        -----------
+        Covariance matrix
+
+        '''
         samplelist = np.array(self.sample_values)
         samplelist_t = samplelist.transpose()
         sample_mean = []
@@ -62,12 +75,16 @@ class Chain:
             sample_mean.append(mean)
             delta = row - mean
             delta_list.append(delta)
-        
+
         for i in range(5):
             for j in range(5):
                 element = np.multiply(delta_list[i],delta_list[j])
                 cov_element = sum(element)/len(element)
                 cov.append(cov_element)
+
+        #Alternate numpy version which gives same result
+        # new_delta = samplelist_t - samplelist_t.mean(axis = 1, keepdims = True)
+        # new_cov_array = np.dot(new_delta, new_delta.transpose())/len(samplelist)
         
         cov_array = np.array(cov)
         cov_matrix = cov_array.reshape(5,5)
@@ -75,7 +92,39 @@ class Chain:
         return cov_matrix
 
         
+def simulator(num=500, sigma=[0.05, 0.1, 5, 1, 0.01]):
+    samples = []
+    for i in np.arange(num):
+        pars = {'Omega_m': abs(np.random.normal(0.3,sigma[0],1)[0]), 
+                'Omega_lambda': abs(np.random.normal(0.7,sigma[1],1)[0]), 
+                'H0': np.random.normal(70,sigma[2],1)[0], 
+                'M_nuisance': np.random.normal(-19, sigma[3], 1)[0],
+                'Omega_k': np.random.normal(0., sigma[4], 1)[0]}
+        #_loglk, pars = LK.likelihood_cal(pars, ifsys=False)
+        samples.append(pars)
+    return samples
 
+def test_Chain():
+    #test the function add_sample and cov_cal in Chain.py
+    sigma = [0.05, 0.1, 5, 1, 0.01]
+    chain = Chain(simulator(1, sigma=sigma)[0])
+    for i in np.arange(1000):
+        sample = simulator(1, sigma=sigma)
+        chain.add_sample(sample[0])
+    cov_obs = chain.cov_cal()
+    cov = []
+    for i in range(5):
+        for j in range(5):
+            cov_element = sigma[i] * sigma[j]
+            cov.append(cov_element)
+        
+    cov_expc = np.array(cov)
+    cov_expc = cov_expc.reshape(5, 5)
+    isclose = np.all((np.isclose(np.diag(cov_expc), np.diag(cov_obs), 0.1)))
+    if isclose:
+        print ('Chain.py is tested!')
+    else:
+        assert isclose, "The cov matrix of generating function is not well calculated"
 
-
-
+if __name__ == '__main__':
+    test_Chain()

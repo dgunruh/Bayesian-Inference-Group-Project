@@ -7,11 +7,45 @@ from matplotlib.image import NonUniformImage
 import matplotlib.pyplot as plt
 import numpy as np
 import corner
-#mcmc_result(cha.samples)
-#trace_plot(cha.samples)
-#omega_m, omega_lambda, prob = samples_process(samples=cha.samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40)
-#fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[])
-def samples_process(samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40):
+import Chain
+import os
+
+def samples_process(samples, x_range=[0, 1.6], y_range=[0, 2.5], xbin=30, ybin=40):
+    """
+    process the input parameters from chain and output the grid and probability
+    -----------
+
+    Parameters:
+    -----------
+    samples : array like;
+    all the samples from chain
+
+    x_range : array like, optional;
+    therange of omega_m that we want to take care of
+
+    y_range : array like, optional;
+    the range of omega_lambda that we want to take care of
+
+    xbin : int, optional;
+    bin number of omega_m
+
+    ybin : int, optional;
+    bin number of omega_lambda
+
+    Returns:
+    --------
+    omega_m : array like;
+    grid for omega_m in the final plot
+
+    omega_lambda : array like;
+    grid for omega_lambda in the final plot
+
+    prob : array like
+    normalized 2D probability distribution
+
+    quantile : array like
+    the mean value and 3 sigma value for omega_m and omega_lambda
+    """
     _omega_m = []
     _omega_L = []
     for _pars in samples:
@@ -23,9 +57,39 @@ def samples_process(samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin
     omega_m = omega_m[:-1]
     omega_lambda = omega_lambda[:-1]
     prob = prob/np.sum(prob)
-    return omega_m, omega_lambda, prob
+    quantile = [np.quantile(_omega_m, [0.16, 0.5, 0.84]), np.quantile(_omega_L, [0.16, 0.5, 0.84])]
+    return omega_m, omega_lambda, prob, quantile
 
-def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[]):
+def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[],
+          quantile_sys=[[], []], quantile_nosys=[[], []], savepath=[]):
+    """
+    function to plot the figure 18 in the paper
+    -----------
+
+    Parameters:
+    -----------
+    omega_m : array like;
+    grid for omega_m in the final plot
+
+    omega_lambda : array like;
+    grid for omega_lambda in the final plot
+
+    prob_sys: array like;
+    normalized 2D probability distribution for the model with systematic error
+
+    prob_nosys: array like;
+    normalized 2D probability distribution for the model without systematic error
+
+    quantile_sys: array like;
+    the mean value and 3 sigma value for omega_m and omega_lambda for the model with systematic error
+
+    quantile_nosys: array like;
+    the mean value and 3 sigma value for omega_m and omega_lambda for the model without systematic error
+
+    savepath: string;
+    the path you want to save the plot
+    """
+
     params = {'legend.fontsize': 16,
               'figure.figsize': (15, 5),
              'axes.labelsize': 17,
@@ -35,7 +99,6 @@ def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[]):
              'ytick.major.size': 5.5,
              'axes.linewidth': 2}
     plt.rcParams.update(params)
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
     fig, axs = plt.subplots(1, 1, figsize=(10,10))
     
     ax = axs
@@ -48,9 +111,29 @@ def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[]):
                     origin='lower', 
                     colors=[(0.80078125, 0.328125 , 0.34765625), (0.76171875, 0.1640625 , 0.18359375)], 
                     alpha=0.9, linewidths=2)
+        x1, x0, x2 = np.round(quantile_sys[0], 3)
+        up = np.round(x2 - x0, 3)
+        down = np.round(x1 - x0, 3)
+        ax.text(0.1, 0.9, r"$\Omega_m$ = "+str(x0)+r"$^{"+str(up)+"}_{"+str(down)+"}$", 
+                transform=ax.transAxes, color='red', size=15, alpha=0.7)
+        x1, x0, x2 = np.round(quantile_sys[1], 3)
+        up = np.round(x2 - x0, 3)
+        down = np.round(x1 - x0, 3)
+        ax.text(0.1, 0.85, r"$\Omega_{\Lambda}$ = "+str(x0)+r"$^{"+str(up)+"}_{"+str(down)+"}$", 
+                transform=ax.transAxes, color='red', size=15, alpha=0.7)
         ax.text(0.5,1.1,"Pantheon", color='red',rotation=40,alpha=0.7, size=15)
     if len(prob_nosys) != 0:
         _chi2_nosys = -2*np.log(prob_nosys)
+        x1, x0, x2 = np.round(quantile_nosys[0], 3)
+        up = np.round(x2 - x0, 3)
+        down = np.round(x1 - x0, 3)
+        ax.text(0.1, 0.8, r"$\Omega_m$ = "+str(x0)+r"$^{"+str(up)+"}_{"+str(down)+"}$", 
+                transform=ax.transAxes, color=(0.5,0.5,0.5), size=15, alpha=0.7)
+        x1, x0, x2 = np.round(quantile_nosys[1], 3)
+        up = np.round(x2 - x0, 3)
+        down = np.round(x1 - x0, 3)
+        ax.text(0.1, 0.75, r"$\Omega_{\Lambda}$ = "+str(x0)+r"$^{"+str(up)+"}_{"+str(down)+"}$", 
+                transform=ax.transAxes, color=(0.5,0.5,0.5), size=15, alpha=0.7)
         ax.contourf(omega_m, omega_lambda, np.transpose(prob_nosys), 
                     levels=[np.exp((6.17+_chi2_nosys.min())/(-2)),np.exp((2.3+_chi2_nosys.min())/(-2)),1],
                     origin='lower', 
@@ -90,10 +173,6 @@ def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[]):
     axHistx.xaxis.set_major_formatter(nullfmt)
     axHisty.yaxis.set_major_formatter(nullfmt)
     # darw the histogram
-    binwidth = 0.05
-    xbins = np.arange(0, 0.5 + binwidth, binwidth)
-    binwidth = 0.1
-    ybins = np.arange(0, 0.5 + binwidth, binwidth)
     if len(prob_sys) != 0:
         axHistx.plot(omega_m, np.sum(np.transpose(prob_sys), axis=0),
                      color = (0.76171875, 0.1640625 , 0.18359375))
@@ -124,10 +203,23 @@ def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[]):
     axHisty.set_ylim(ymin,ymax)
     ax2.set_xlim(xmin,xmax)
     ax2.set_ylim(ymin,ymax)
-    
+    if savepath:
+        fig.savefig(savepath, format='png', dpi=600)
     plt.show()
 
-def mcmc_result(parameters):
+def mcmc_result(parameters, savepath=[]):
+    """
+    the mcmc results for all the elements
+    -----------
+
+    Parameters:
+    -----------
+    parameters : array like;
+    all the samples from chain
+
+    savepath: string;
+    the path you want to save the plot
+    """
     keys = parameters[1].keys()
     latex_dic = {'Omega_m': r"$\Omega_m$",
                  'Omega_lambda': r"$\Omega_{\Lambda}$",
@@ -151,9 +243,24 @@ def mcmc_result(parameters):
         ax.spines['right'].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('none')
+    if savepath:
+        figure.savefig(savepath, format='png', dpi=600)
     plt.show()
 
-def trace_plot(parameters):
+def trace_plot(parameters, savepath=[]):
+    """
+    trace plots for all the elements
+    -----------
+
+    Parameters:
+    -----------
+    parameters : array like;
+    all the samples from chain
+
+    savepath: string;
+    the path you want to save the plot
+    """
+
     keys = parameters[1].keys()
     latex_dic = {'Omega_m': r"$\Omega_m$",
                  'Omega_lambda': r"$\Omega_{\Lambda}$",
@@ -173,7 +280,6 @@ def trace_plot(parameters):
          'ytick.major.size': 5.5,
          'axes.linewidth': 2}
     plt.rcParams.update(params)
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
     fig, axs = plt.subplots(nrows=len(keys), ncols=1, sharex=True, figsize=(15, 10), gridspec_kw={'hspace': 0})
     pars_array = []
     for _pars in parameters:
@@ -187,26 +293,85 @@ def trace_plot(parameters):
     plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
     plt.xlabel('steps', size=20, labelpad=12)
     plt.title('Trace Plot')
+    if savepath:
+        fig.savefig(savepath, format='png', dpi=600)
     plt.show()
 
-def simulator(num=500):
-    samples = []
-    for i in np.arange(num):
-        pars = {'Omega_m': abs(np.random.normal(0.3,0.05,1)[0]), 
-                'Omega_lambda': abs(np.random.normal(0.7,0.1,1)[0]), 
-                'H0': np.random.normal(70,5,1)[0], 
-                #'M_nuisance': np.random.normal(-19, 1, 1)[0],
-                'Omega_k': np.random.normal(0., 0.01, 1)[0]}
-        #_loglk, pars = LK.likelihood_cal(pars, ifsys=False)
-        samples.append(pars)
-    return samples
+def post_prob(parameters, element='H0', xbin=50, savepath=[]):
+    """
+    posterior probability for the given element
+    -----------
+
+    Parameters:
+    -----------
+    parameters : array like;
+    all the samples from chain
+
+    element : string;
+    the element you want to deal with
+
+    xbin : int, optional;
+    bin size of the plot
+
+    savepath: string;
+    the path you want to save the plot
+    """
+
+    latex_dic = {'Omega_m': r"$\Omega_m$",
+                 'Omega_lambda': r"$\Omega_{\Lambda}$",
+                 'H0': r"$H_0$",
+                 'M_nuisance': r"$M$",
+                 'Omega_k': r"$\Omega_k$"}
+    label = latex_dic[element]
+
+    params = {'legend.fontsize': 16,
+          'figure.figsize': (15, 5),
+         'axes.labelsize': 17,
+         'axes.titlesize':20,
+         'xtick.labelsize':10,
+         'ytick.labelsize':10,
+         'ytick.major.size': 5.5,
+         'axes.linewidth': 2}
+    plt.rcParams.update(params)
+    fig, axs = plt.subplots(nrows=1, ncols=1, sharex=True, figsize=(15, 10))
+    _element = []
+    for _par in parameters:
+        _element.append(_par.get(element))
+    
+    quantile = np.quantile(_element, [0.021, 0.16, 0.5, 0.84, 0.979])
+    x_value = np.linspace(quantile[0], quantile[-1], xbin)
+    prob, x_value = np.histogram(_element, bins=x_value)
+    x_value = x_value[:-1]
+    prob = prob/np.sum(prob)
+    axs.step(x_value, prob)
+
+    up = np.round(quantile[3] - quantile[2], 3)
+    down = np.round(quantile[1] - quantile[2], 3)
+    x0 = np.round(quantile[2])
+    axs.axvline(quantile[1], color='red', linestyle='--')
+    axs.axvline(quantile[2], color='red', linestyle='--')
+    axs.axvline(quantile[3], color='red', linestyle='--')
+    axs.text(0.55, 0.95, label+ r" = "+str(x0)+r"$^{"+str(up)+"}_{"+str(down)+"}$", 
+            transform=axs.transAxes, color='red', size=15, alpha=0.7)
+
+    
+    axs.set_xlabel(label)
+    axs.set_ylabel('Posterior Probability')
+    axs.set_title('Posterior Probability for ' + label)
+    if savepath:
+        fig.savefig(savepath, format='png', dpi=600)
+    plt.show()
 
 if __name__ == '__main__':
-    samples = simulator(1000)  #plot data from simulator, just a test
+
+    samples = Chain.simulator(10000)  #plot data from simulator, just a test
     
     mcmc_result(samples) #check all the parameters
     
     trace_plot(samples) #trace plot as a sanity check
     
-    omega_m, omega_lambda, prob = samples_process(samples=samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40) #fig 18
-    fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[]) #fig 18
+    omega_m, omega_lambda, prob, quantile_nosys = samples_process(samples=samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40) #fig 18
+    fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[],
+          quantile_nosys=quantile_nosys)  #fig 18
+    post_prob(samples, element='H0', xbin=70)
+    print ("plot_mc.py is tested!")
