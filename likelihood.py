@@ -438,6 +438,6 @@ if __name__ == '__main__':
     test_hubble_distance()
     test_integrand()
     test_luminosity_distances()
-    test_likelihood() #This may take one minute to run
     test_luminosity_delegate()
     test_compute_model()
+    test_likelihood() #final test, This may take one minute to run
