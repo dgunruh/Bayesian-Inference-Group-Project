@@ -5,27 +5,43 @@ import likelihood as lk
 import Chain as c
 import MCsampler
 import plot_mc
-import os
 
-if __name__ == '__main__':
-    runiterate = False
-    sample_num = 1000    #total number of sample drawn
-    cov_ite_num = 2    #total iterate number to get a proper covariant matrix
+def create_fig18(systematic, det_cov):
+    '''
+    A function which creates a replica of Fig. 18 from the paper.
+
+    Inputs:
+    ------------
+    systematic: Boolean
+        Determines whether the plot will include the systematic error,
+        or just use the statistical error. 
+
+    det_cov: Boolean
+        Determines whether the program needs to determine the covariance
+        or not. If not, it is assumed that it was already calculated, and 
+        the program will load it. 
+    '''
+    sample_num = 100000    #total number of samples drawn
+    cov_ite_num = 2    #total number of iterations to get a proper covariant matrix
+
     parms = ['Omega_m','Omega_lambda','H0','M_nuisance','Omega_k']
     initial_condition = {'Omega_m': 0.3, 'Omega_lambda': 0.7, 'H0': 74.0,
                           'M_nuisance': -19.23, 'Omega_k': 0.0}
+    #All priors will be uniform
     priors = {'Omega_m': 0.0,
               'Omega_lambda': 0.0,
               'H0': 0.0,
               'M_nuisance': 0.0,
               'Omega_k': 0.0} 
-    cov = np.loadtxt("cov.txt")            
-    sam = MCsampler.MCMC(initial_condition,priors)
-    
+
+    #Determines the standard deviation of the distributions used
+    #by the generating function to get new parameter values
+    scaling = [0.1, 0.1, 1.0, 0.1, 0.1]
+    sam = MCsampler.MCMC(initial_condition,priors, scaling, systematic, True)
+
     #iterate to have a convergent covariant matrix for the 4 parameters
-    if runiterate == True:
+    if det_cov == True:
         for _ in range(cov_ite_num):
-            sam.accepted = 0
             for _ in range(sample_num):
                 sam.add_to_chain()
             cha = sam.return_chain()
@@ -41,33 +57,89 @@ if __name__ == '__main__':
         np.savetxt("cov.txt",cov)
 
     else:
+        cov = np.loadtxt("cov.txt")
+        sam.cov_alpha = 100.0
         sam.learncov(cov)
         for _ in range(sample_num):
             sam.add_to_chain()
         cha = sam.return_chain()
-    #print(cha.samples)
 
-    #"""All the plots
+    omega_m, omega_lambda, prob, quantile = plot_mc.samples_process(samples=cha.samples, x_range=[0, 1.6], y_range=[0, 2.5], xbin=30, ybin=40)
     
-    #samples = cha.samples #plot the MCMC data
-    #samples = c.simulator(1000)  #plot data from simulator, just a test
+    if systematic:
+        plot_mc.fig18(omega_m, omega_lambda, prob_nosys=[], prob_sys=prob,
+                      quantile_nosys=[[],[]], quantile_sys=quantile, savepath=os.getcwd() + '/results/fig18.png')
+    else:
+        plot_mc.fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[],
+                      quantile_nosys=quantile, quantile_sys=[[],[]], savepath=os.getcwd() + '/results/fig18.png')
+
+def create_H_posterior(systematic, det_cov):
+    '''
+    A function which creates a replica of Fig. 18 from the paper.
+
+    Inputs:
+    ------------
+    systematic: Boolean
+        Determines whether the plot will include the systematic error,
+        or just use the statistical error. 
+
+    det_cov: Boolean
+        Determines whether the program needs to determine the covariance
+        or not. If not, it is assumed that it was already calculated, and 
+        the program will load it. 
+    '''
+    sample_num = 20000    #total number of samples drawn
+    cov_ite_num = 2    #total number of iterations to get a proper covariant matrix
+
+    parms = ['Omega_m','Omega_lambda','H0','M_nuisance','Omega_k']
+    initial_condition = {'Omega_m': 0.3, 'Omega_lambda': 0.7, 'H0': 74.0,
+                          'M_nuisance': -19.23, 'Omega_k': 0.0}
     
-    plot_mc.mcmc_result(cha.samples, savepath=os.getcwd() + '/results/mcmc.png') #check all the parameters
-    
-    plot_mc.trace_plot(cha.samples, savepath=os.getcwd() + '/results/trace.png') #trace plot as a sanity check
-    
-    omega_m, omega_lambda, prob_nosys, quantile_nosys = plot_mc.samples_process(samples=cha.samples, x_range=[0, 1.6], y_range=[0, 2.5], xbin=30, ybin=40)  #fig 18
-    #omega_m, omega_lambda, prob_sys, quantile_sys = plot_mc.samples_process(samples=cha.samples, x_range=[0, 1.6], y_range = [0, 2.5], xbin=30, ybin=40) #fig 18
-    plot_mc.fig18(omega_m, omega_lambda, prob_nosys=prob_nosys, prob_sys=[],
-                  quantile_nosys=quantile_nosys, quantile_sys=[[],[]], savepath=os.getcwd() + '/results/fig18.png')  #fig 18
-    #plot_mc.fig18(omega_m, omega_lambda, prob_nosys=prob_nosys, prob_sys=prob_sys,
-    #              quantile_nosys=quantile_nosys, quantile_sys=quantile_sys, savepath=os.getcwd() + '/results/fig18.png')  #final fig 18
-    
+    #M prior is not uniform, but instead has std .042
+    priors = {'Omega_m': 0.0,
+              'Omega_lambda': 0.0,
+              'H0': 0.0,
+              'M_nuisance': 0.042,
+              'Omega_k': 0.0} 
+
+    #Determines the standard deviation of the distributions used
+    #by the generating function to get new parameter values
+    scaling = [0.1, 0.1, 1.0, 0.042, 0.1]
+    sam = MCsampler.MCMC(initial_condition,priors, scaling, systematic, False)
+
+    #iterate to have a convergent covariant matrix for the 4 parameters
+    if det_cov == True:
+        for _ in range(cov_ite_num):
+            for _ in range(sample_num):
+                sam.add_to_chain()
+            cha = sam.return_chain()
+
+            #calculate covariant matrix from chain data
+            cov = cha.cov_cal()
+
+            #reset alpha to be a new value. Starting value is 0.1
+            sam.cov_alpha = 100.0
+            sam.learncov(cov)
+            sam.reset_chain()
+
+        np.savetxt("cov.txt",cov)
+
+    else:
+        cov = np.loadtxt("cov.txt")
+        sam.cov_alpha = 100.0
+        sam.learncov(cov)
+        for _ in range(sample_num):
+            sam.add_to_chain()
+        cha = sam.return_chain()
+
+    omega_m, omega_lambda, prob, quant = plot_mc.samples_process(samples=cha.samples, x_range=[0, 1.6], y_range=[0, 2.5], xbin=30, ybin=40)
     plot_mc.post_prob(cha.samples, element='H0',
-                      xbin=50, savepath=os.getcwd() + '/results/post_prob_H0.png') #plot the posterior probability for any element
-    #"""
+                      xbin=50, savepath=os.getcwd() + '/results/post_prob_H0.png')
 
-    acceptance_rate = (1.0*sam.accepted)/(1.0*sample_num)
-    print("acceptance rate = ",acceptance_rate)
-    #plot the data stored in chain, to be finished
-    #cha.plot()
+if __name__ == '__main__':
+    #Create Fig. 18 without including systematic error. Make covariance matrix
+    #create_fig18(False, True)
+    #Create Fig. 18 while including systematic error
+    #create_fig18(True, False)
+    #Create posterior distribution of H if M has a prior of .042
+    create_H_posterior(True, False)
