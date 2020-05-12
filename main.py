@@ -36,7 +36,7 @@ def prep_fig18(systematic, det_cov=False):
     quantile : array like
     the mean value and 3 sigma value for omega_m and omega_lambda
     '''
-    sample_num = 10000    #total number of samples drawn
+    sample_num = 60000    #total number of samples drawn
     cov_ite_num = 2    #total number of iterations to get a proper covariant matrix
 
     #parms = ['Omega_m','Omega_lambda','H0','M_nuisance','Omega_k']
@@ -84,9 +84,9 @@ def prep_fig18(systematic, det_cov=False):
         cha = sam.return_chain()
 
     if systematic:
-        omega_m, omega_lambda, prob, quantile = plot_mc.samples_process(samples=cha.samples, x_range=[0, 1.6], y_range=[0, 2.5], xbin=50, ybin=50)
+        omega_m, omega_lambda, prob, quantile = plot_mc.samples_process(samples=cha.samples, x_range=[0, 1.6], y_range=[0, 2.5], xbin=100, ybin=100)
     else:
-        omega_m, omega_lambda, prob, quantile = plot_mc.samples_process(samples=cha.samples, x_range=[0, 1.6], y_range=[0, 2.5], xbin=50, ybin=50)
+        omega_m, omega_lambda, prob, quantile = plot_mc.samples_process(samples=cha.samples, x_range=[0, 1.6], y_range=[0, 2.5], xbin=100, ybin=100)
         
     return omega_m, omega_lambda, prob, quantile
 
@@ -182,7 +182,7 @@ def create_H_posterior(systematic, det_cov=False):
 if __name__ == '__main__':
     #Create Fig. 18, including containing only statistical error, and including
     # both statistical and systematic error
-    create_fig18(False)
+    create_fig18(det_cov=False)
 
     #Create posterior distribution of H assuming M has a prior of .042
-    create_H_posterior(True)
+    create_H_posterior(systematic=True)

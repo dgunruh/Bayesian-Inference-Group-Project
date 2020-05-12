@@ -17,7 +17,15 @@ In each file, we implement corresponding tests for the functions and classes in 
 python likelihood.py
 ```
 in a terminal.
-
+## final plots
+**reproduce figure 18:**
+![figure 18](/results/fig18.png)
+**mcmc result after adding the prior on M:**
+![MCMC result](/results/mcmc.png)
+**trace plot:**
+![trace plot](/results/trace.png)
+**posterior probability distribution of H0 after adding prior on M:**
+![posterior probability distribution of H0](/results/post_prob_H0.png)
 # Group Project Plan
 Yize Dong, Davis Unruh, Patrick Wells, Tianqi Zhang
 # Code Modules:
