@@ -52,6 +52,19 @@ class Chain:
 
 
     def cov_cal(self,scale=1):
+        '''
+        Calculate the covariance matrix from current samples
+        
+        Parameters:
+        -----------
+        scale: float
+        Scale up the covariace matrix to fine tune the generating steps, default scale = 1
+
+        Return: numpy array
+        -----------
+        Covariance matrix
+
+        '''
         samplelist = np.array(self.sample_values)
         samplelist_t = samplelist.transpose()
         sample_mean = []

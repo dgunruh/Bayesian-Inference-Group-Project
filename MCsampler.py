@@ -169,6 +169,11 @@ class MCMC(object):
         A real customized 5d random sampling would be wild, this is just a work around that
         makes sense to me. PLEASE let me know any possible improvement.
 
+        Returns:
+        -----------
+        potential_candidate:[float]
+        The potential candidate, elected by the generating function, to be judged.
+
         """
 
         current = list(self.current_params.values())
@@ -331,3 +336,45 @@ class MCMC(object):
 
         self.chain = Chain.Chain(self.initial_params)
         self.current_params = self.initial_params
+
+def test_sampler():
+    cov = np.identity(5)
+    initial_params = {"Omega_m": 0.3,
+                     "Omega_lambda": 0.7,
+                     "H0": 74.0,
+                     "M_nuisance": -19.23,
+                     "Omega_k": 0.0,
+                    }
+    priors = {"Omega_m": 0.0,
+              "Omega_lambda": 0.0,
+              "H0": 0.0,
+              "M_nuisance": 0.042,
+              "Omega_k": 0.0
+              }
+    scaling = [0.1, 0.1, 1.0, 0.1, 0.1]
+    number_steps = 100
+    test_pass = True
+    try:
+        mcmc = MCMC(initial_params, priors, scaling, True, False)
+        print("Initializing Sampler")
+    except:
+        print("Cannot initialize Sampler, Please check input parameters")
+        test_pass = False
+    try:
+        mcmc.learncov(cov)
+        print("Obtaining Covariance Matrix")
+    except:
+        print("Cannot find covariance matrix")
+        test_pass = False
+    try:
+        for _ in range(number_steps):
+            mcmc.add_to_chain()
+    except:
+        test_pass = False
+        print("Cannot add to chain")
+    assert test_pass, "Test failed, chain not saved"
+    chain = mcmc.return_chain()
+    print("Test passed")
+
+if __name__ == '__main__':
+    test_sampler()
