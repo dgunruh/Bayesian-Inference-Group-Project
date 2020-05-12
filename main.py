@@ -109,7 +109,7 @@ def create_fig18(det_cov=False):
     omega_m, omega_lambda, prob_sys, quantile_sys = prep_fig18(True, False)
 
     plot_mc.fig18(omega_m, omega_lambda, prob_nosys=prob_nosys, prob_sys=prob_sys,
-                quantile_nosys=quantile_nosys, quantile_sys=quantile_sys, savepath=os.getcwd() + '\\results\\fig18.png')
+                quantile_nosys=quantile_nosys, quantile_sys=quantile_sys, savepath=os.getcwd() + '/results/fig18.png')
 
 def create_H_posterior(systematic, det_cov=False):
     '''
@@ -174,10 +174,10 @@ def create_H_posterior(systematic, det_cov=False):
             sam.add_to_chain()
         cha = sam.return_chain()
 
-    plot_mc.mcmc_result(cha.samples, savepath=os.getcwd() + '\\results\\mcmc.png') #check all the parameters
-    plot_mc.trace_plot(cha.samples, savepath=os.getcwd() + '\\results\\trace.png') #trace plot as a sanity check
+    plot_mc.mcmc_result(cha.samples, savepath=os.getcwd() + '/results/mcmc.png') #check all the parameters
+    plot_mc.trace_plot(cha.samples, savepath=os.getcwd() + '/results/trace.png') #trace plot as a sanity check
     plot_mc.post_prob(cha.samples, element='H0',
-                      xbin=50, savepath=os.getcwd() + '\\results\\post_prob_H0.png')
+                      xbin=50, savepath=os.getcwd() + '/results/post_prob_H0.png')
 
 if __name__ == '__main__':
     #Create Fig. 18, including containing only statistical error, and including
