@@ -1,6 +1,25 @@
 # Group Project Plan
 Yize Dong, Davis Unruh, Patrick Wells, Tianqi Zhang
 
+# Results:
+## Classes and functions
+**There are four main parts for our project:**
+1. [likelihood.py](/likelihood.py): loads the raw data, calculates the model luminosity distance and calculate the log-likelihood
+2. [MCsampler.py](/MCsampler.py): Includes generating function, use the likelihood calculated from likelihood.py to take steps
+3. [Chain.py](/Chain.py): Generates a chain for storing MCMC samples, also calculate the covariance matrix for generating function
+4. [plot_mc.py](/plot_mc.py): All the functions about plot. 
+## Top level calls
+All the modules are loaded in [main.py](/main.py), and the results can be produced by running:
+```
+python main.py
+```
+All the final plots are saved in [results](/results)
+## Tests
+In each file, we implement corresponding tests for the functions and classes in that file. For example, the test for [likelihood.py](/likelihood.py) can be done by running 
+```
+python likelihood.py
+```
+in a terminal.
 
 # Code Modules:
 
