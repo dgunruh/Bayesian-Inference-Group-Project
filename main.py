@@ -5,8 +5,9 @@ import likelihood as lk
 import Chain as c
 import MCsampler
 import plot_mc
+import os
 
-def create_fig18(systematic, det_cov):
+def prep_fig18(systematic, det_cov=False):
     '''
     A function which creates a replica of Fig. 18 from the paper.
 
@@ -20,8 +21,22 @@ def create_fig18(systematic, det_cov):
         Determines whether the program needs to determine the covariance
         or not. If not, it is assumed that it was already calculated, and 
         the program will load it. 
+
+    Returns:
+    ------------
+    omega_m : array like;
+    grid for omega_m in the final plot
+
+    omega_lambda : array like;
+    grid for omega_lambda in the final plot
+
+    prob : array like
+    normalized 2D probability distribution
+
+    quantile : array like
+    the mean value and 3 sigma value for omega_m and omega_lambda
     '''
-    sample_num = 100000    #total number of samples drawn
+    sample_num = 10000    #total number of samples drawn
     cov_ite_num = 2    #total number of iterations to get a proper covariant matrix
 
     parms = ['Omega_m','Omega_lambda','H0','M_nuisance','Omega_k']
@@ -40,7 +55,7 @@ def create_fig18(systematic, det_cov):
     sam = MCsampler.MCMC(initial_condition,priors, scaling, systematic, True)
 
     #iterate to have a convergent covariant matrix for the 4 parameters
-    if det_cov == True:
+    if det_cov:
         for _ in range(cov_ite_num):
             for _ in range(sample_num):
                 sam.add_to_chain()
@@ -64,16 +79,23 @@ def create_fig18(systematic, det_cov):
             sam.add_to_chain()
         cha = sam.return_chain()
 
-    omega_m, omega_lambda, prob, quantile = plot_mc.samples_process(samples=cha.samples, x_range=[0, 1.6], y_range=[0, 2.5], xbin=30, ybin=40)
-    
     if systematic:
-        plot_mc.fig18(omega_m, omega_lambda, prob_nosys=[], prob_sys=prob,
-                      quantile_nosys=[[],[]], quantile_sys=quantile, savepath=os.getcwd() + '/results/fig18.png')
+        omega_m, omega_lambda, prob, quantile = plot_mc.samples_process(samples=cha.samples, x_range=[0, 1.6], y_range=[0, 2.5], xbin=50, ybin=50)
     else:
-        plot_mc.fig18(omega_m, omega_lambda, prob_nosys=prob, prob_sys=[],
-                      quantile_nosys=quantile, quantile_sys=[[],[]], savepath=os.getcwd() + '/results/fig18.png')
+        omega_m, omega_lambda, prob, quantile = plot_mc.samples_process(samples=cha.samples, x_range=[0, 1.6], y_range=[0, 2.5], xbin=50, ybin=50)
+        
+    return omega_m, omega_lambda, prob, quantile
 
-def create_H_posterior(systematic, det_cov):
+def create_fig18():
+    """
+    This function is used to create figure 18
+    """
+    omega_m, omega_lambda, prob_nosys, quantile_nosys = prep_fig18(False, False)
+    omega_m, omega_lambda, prob_sys, quantile_sys = prep_fig18(True, False)
+    plot_mc.fig18(omega_m, omega_lambda, prob_nosys=prob_nosys, prob_sys=prob_sys,
+                quantile_nosys=quantile_nosys, quantile_sys=quantile_sys, savepath=os.getcwd() + '/results/fig18.png')
+
+def create_H_posterior(systematic, det_cov=False):
     '''
     A function which creates a replica of Fig. 18 from the paper.
 
@@ -108,7 +130,7 @@ def create_H_posterior(systematic, det_cov):
     sam = MCsampler.MCMC(initial_condition,priors, scaling, systematic, False)
 
     #iterate to have a convergent covariant matrix for the 4 parameters
-    if det_cov == True:
+    if det_cov:
         for _ in range(cov_ite_num):
             for _ in range(sample_num):
                 sam.add_to_chain()
@@ -132,7 +154,8 @@ def create_H_posterior(systematic, det_cov):
             sam.add_to_chain()
         cha = sam.return_chain()
 
-    omega_m, omega_lambda, prob, quant = plot_mc.samples_process(samples=cha.samples, x_range=[0, 1.6], y_range=[0, 2.5], xbin=30, ybin=40)
+    plot._mc.mcmc_result(cha.samples, savepath=os.getcwd() + '/results/mcmc.png') #check all the parameters
+    plot_mc.trace_plot(cha.samples, savepath=os.getcwd() + '/results/trace.png') #trace plot as a sanity check
     plot_mc.post_prob(cha.samples, element='H0',
                       xbin=50, savepath=os.getcwd() + '/results/post_prob_H0.png')
 
@@ -142,4 +165,5 @@ if __name__ == '__main__':
     #Create Fig. 18 while including systematic error
     #create_fig18(True, False)
     #Create posterior distribution of H if M has a prior of .042
+    create_fig18()
     create_H_posterior(True, False)
