@@ -1,10 +1,10 @@
 # Results:
 ## Classes and functions
 **There are four main parts for our project:**
-1. [likelihood.py](/likelihood.py): loads the raw data, calculates the model luminosity distance and calculate the log-likelihood
-2. [MCsampler.py](/MCsampler.py): Includes generating function, use the likelihood calculated from likelihood.py to take steps
-3. [Chain.py](/Chain.py): Generates a chain for storing MCMC samples, also calculate the covariance matrix for generating function
-4. [plot_mc.py](/plot_mc.py): All the functions about plot. 
+1. [likelihood.py](/likelihood.py): loads the raw data, calculates the model luminosity distance and the log-likelihood
+2. [MCsampler.py](/MCsampler.py): Includes generating function, uses the likelihood calculated from likelihood.py to take steps
+3. [Chain.py](/Chain.py): Generates a chain for storing MCMC samples, also calculates the covariance matrix for generating function
+4. [plot_mc.py](/plot_mc.py): All the functions about plots. 
 ## Top level calls
 All the modules are loaded in [main.py](/main.py), and the results can be produced by running:
 ```
