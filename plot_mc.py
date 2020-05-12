@@ -174,9 +174,9 @@ def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[],
     axHisty.yaxis.set_major_formatter(nullfmt)
     # darw the histogram
     if len(prob_sys) != 0:
-        axHistx.plot(omega_m, np.sum(np.transpose(prob_sys), axis=0),
+        axHistx.step(omega_m, np.sum(np.transpose(prob_sys), axis=0),
                      color = (0.76171875, 0.1640625 , 0.18359375))
-        axHisty.plot(np.sum(np.transpose(prob_sys), axis=1), omega_lambda,
+        axHisty.step(np.sum(np.transpose(prob_sys), axis=1), omega_lambda,
                      color = (0.76171875, 0.1640625 , 0.18359375))
         ax2.contourf(omega_m, omega_lambda, np.transpose(prob_sys), 
                      levels=[np.exp((6.17+_chi2_sys.min())/(-2)),np.exp((2.3+_chi2_sys.min())/(-2)),1],
@@ -185,9 +185,9 @@ def fig18(omega_m=[], omega_lambda=[], prob_sys=[], prob_nosys=[],
                      alpha=0.7, linewidths=2)
         ax2.text(0.4,0.8,"Pantheon", color='red',rotation=40,alpha=0.7, size=15)
     if len(prob_nosys) != 0:
-        axHistx.plot(omega_m, np.sum(np.transpose(prob_nosys), axis=0),
+        axHistx.step(omega_m, np.sum(np.transpose(prob_nosys), axis=0),
                      color = (0.4,0.4,0.4))
-        axHisty.plot(np.sum(np.transpose(prob_nosys), axis=1), omega_lambda,
+        axHisty.step(np.sum(np.transpose(prob_nosys), axis=1), omega_lambda,
                      color = (0.4,0.4,0.4))
         ax2.contourf(omega_m, omega_lambda, np.transpose(prob_nosys), 
                      levels=[np.exp((6.17+_chi2_nosys.min())/(-2)),np.exp((2.3+_chi2_nosys.min())/(-2)),1],
